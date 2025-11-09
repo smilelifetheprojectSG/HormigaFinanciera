@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hormiga Financiera - Controla tus Finanzas</title>
+    
+    <!-- Tailwind CSS desde CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Configuración personalizada de Tailwind para mantener el mismo estilo -->
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              'background': 'var(--color-background)',
+              'surface': 'var(--color-surface)',
+              'primary': {
+                DEFAULT: 'var(--color-primary-default)',
+                light: 'var(--color-primary-light)',
+                dark: 'var(--color-primary-dark)',
+              },
+              'secondary': {
+                DEFAULT: 'var(--color-secondary-default)',
+                dark: 'var(--color-secondary-dark)',
+              },
+              'text-primary': 'var(--color-text-primary)',
+              'text-secondary': 'var(--color-text-secondary)',
+              'text-disabled': 'var(--color-text-disabled)',
+              'border': 'var(--color-border)',
+              'accent': {
+                  DEFAULT: 'var(--color-accent-default)',
+                  dark: 'var(--color-accent-dark)'
+              },
+              'subtle-button-bg': 'var(--color-subtle-button-bg)',
+              'subtle-button-text': 'var(--color-subtle-button-text)',
+              'subtle-button-hover-bg': 'var(--color-subtle-button-hover-bg)',
+              'red-subtle-bg': 'var(--color-red-subtle-bg)',
+              'progress-bar-bg': 'var(--color-progress-bar-bg)',
+            },
+            fontFamily: {
+               sans: ['Inter', 'sans-serif'],
+            },
+            boxShadow: {
+              'lg': '0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+              '2xl': '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+            },
+            keyframes: {
+              'fade-in-up': {
+                '0%': { opacity: '0', transform: 'translateY(10px)' },
+                '100%': { opacity: '1', transform: 'translateY(0)' },
+              },
+              'scale-in': {
+                '0%': { opacity: '0', transform: 'scale(0.95)' },
+                '100%': { opacity: '1', transform: 'scale(1)' },
+              },
+              'slide-in-right': {
+                '0%': { transform: 'translateX(100%)' },
+                '100%': { transform: 'translateX(0)' },
+              },
+              'fade-out': {
+                '0%': { opacity: '1' },
+                '100%': { opacity: '0' },
+              }
+            },
+            animation: {
+              'fade-in-up': 'fade-in-up 0.3s ease-out',
+              'scale-in': 'scale-in 0.2s ease-out',
+              'slide-in-right': 'slide-in-right 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+              'fade-out': 'fade-out 0.4s ease-out forwards',
+            }
+          }
+        }
+      }
+    </script>
+
+    <!-- Fuentes de Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+      :root {
+        /* Paleta inspirada en la imagen - Tema Claro (Soft Blue) */
+        --color-background: #f0f9ff; /* sky-50 */
+        --color-surface: #ffffff;
+        --color-primary-default: #2563eb; /* blue-600 */
+        --color-primary-light: #3b82f6; /* blue-500 */
+        --color-primary-dark: #1e3a8a; /* blue-900 */
+        --color-secondary-default: #60a5fa; /* blue-400 */
+        --color-secondary-dark: #3b82f6; /* blue-500 */
+        --color-text-primary: #1e3a8a; /* blue-900 */
+        --color-text-secondary: #64748b; /* slate-500 */
+        --color-text-disabled: #cbd5e1; /* slate-300 */
+        --color-border: #e0f2fe; /* sky-200 */
+        --color-accent-default: #2563eb; /* blue-600 */
+        --color-accent-dark: #1d4ed8; /* blue-700 */
+        
+        --color-subtle-button-bg: #e0f2fe; /* sky-200 */
+        --color-subtle-button-text: #0369a1; /* sky-700 */
+        --color-subtle-button-hover-bg: #bae6fd; /* sky-300 */
+      
+        --color-red-subtle-bg: #fef2f2; /* red-50 */
+        --color-progress-bar-bg: #e0f2fe; /* sky-200 */
+      }
+      .dark-theme {
+        /* Paleta inspirada en la imagen - Tema Oscuro (Deep Sky) */
+        --color-background: #082f49; /* sky-950 */
+        --color-surface: #0c4a6e; /* sky-900 */
+        --color-primary-default: #38bdf8; /* sky-400 */
+        --color-primary-light: #7dd3fc; /* sky-300 */
+        --color-primary-dark: #0ea5e9; /* sky-500 */
+        --color-secondary-default: #94a3b8; /* slate-400 */
+        --color-secondary-dark: #64748b; /* slate-500 */
+        --color-text-primary: #f0f9ff; /* sky-50 */
+        --color-text-secondary: #94a3b8; /* slate-400 */
+        --color-text-disabled: #475569; /* slate-600 */
+        --color-border: #075985; /* sky-800 */
+        --color-accent-default: #38bdf8; /* sky-400 */
+        --color-accent-dark: #0ea5e9; /* sky-500 */
+        
+        --color-subtle-button-bg: #075985; /* sky-800 */
+        --color-subtle-button-text: #e0f2fe; /* sky-200 */
+        --color-subtle-button-hover-bg: #0369a1; /* sky-700 */
+      
+        --color-red-subtle-bg: rgba(220, 38, 38, 0.15); /* red-600 with alpha */
+        --color-progress-bar-bg: #075985; /* sky-800 */
+      }
+      body, .bg-surface, .bg-background, .text-text-primary, .text-text-secondary, .border-border, button {
+        transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+      }
+    </style>
+
+<script type="importmap">
+{
+  "imports": {
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.29.0",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "uuid": "https://aistudiocdn.com/uuid@^13.0.0"
+  }
+}
+</script>
+</head>
+
+<body class="bg-background font-sans text-text-primary">
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+</body>
+</html>

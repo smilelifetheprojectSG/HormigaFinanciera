@@ -1,0 +1,5 @@
+{
+  "name": "Hormiga Financiera",
+  "description": "Una aplicación web para registrar y controlar tus ahorros diarios. Visualiza tu progreso con gráficos, establece metas y obtén consejos financieros personalizados con IA para alcanzar tus objetivos más rápido.",
+  "requestFramePermissions": []
+}
