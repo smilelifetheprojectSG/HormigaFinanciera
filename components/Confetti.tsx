@@ -23,7 +23,9 @@ interface ConfettiParticle {
 
 export const Confetti: React.FC<ConfettiProps> = ({ isActive }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const animationFrameId = useRef<number>();
+  // FIX: The initial value of a ref without an argument is `undefined`, which is not assignable to `number`.
+  // Changed the type to `number | null` and initialized with `null`.
+  const animationFrameId = useRef<number | null>(null);
   const particles = useRef<ConfettiParticle[]>([]);
   const animationStartTime = useRef<number | null>(null);
 

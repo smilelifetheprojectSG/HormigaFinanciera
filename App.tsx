@@ -5,7 +5,6 @@ import { Dashboard } from './components/Dashboard';
 import { SavingsList } from './components/SavingsList';
 import { SavingsForm } from './components/SavingsForm';
 import { GoalSetter } from './components/GoalSetter';
-import { AITip } from './components/AITip';
 import { NotificationContainer } from './components/NotificationContainer';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { useNotifications } from './hooks/useNotifications';
@@ -186,7 +185,6 @@ function AppContent() {
             goal={goal}
             onSetGoal={() => setIsGoalSetterOpen(true)}
         />
-        <AITip savings={savings} />
       </main>
       
       <NotificationContainer notifications={notifications} onDismiss={dismissNotification} />
