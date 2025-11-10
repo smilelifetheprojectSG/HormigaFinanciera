@@ -33,7 +33,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ savings }) => {
   // 1. Total Ahorrado (General)
   const totalSaved = savings.reduce((sum, entry) => sum + entry.amount, 0);
 
-  // 2. Total Disponible (suma de los saldos más recientes de las cuentas)
+  // 2. Total Disponible (suma de saldos específicos)
   const availableBalanceConcepts = [
     'Saldo en efectivo',
     'Saldo en Revolut Mama',
@@ -42,20 +42,22 @@ export const Dashboard: React.FC<DashboardProps> = ({ savings }) => {
     'Saldo en PayPal Javi'
   ];
   
-  // Para cada concepto de balance, encontramos el registro más reciente.
-  // El "Total Disponible" es la suma de estos últimos saldos registrados.
+  // This logic calculates the total available balance by summing the *latest* entry
+  // for each of the specified balance concepts. This prevents summing up historical
+  // balance snapshots and gives a more accurate view of the current available funds.
   const latestBalances = new Map<string, SavingEntry>();
+
   savings.forEach(entry => {
     if (availableBalanceConcepts.includes(entry.description)) {
       const existingEntry = latestBalances.get(entry.description);
-      // Si no hay entrada o la nueva es más reciente (o del mismo día), la actualizamos.
-      // Si hay múltiples entradas en el mismo día, la última en el array `savings` prevalecerá.
-      if (!existingEntry || new Date(entry.date) >= new Date(existingEntry.date)) {
+      // If we haven't seen this concept before, or if the current entry's date
+      // is the same or newer, update it. This ensures we have the latest balance.
+      if (!existingEntry || entry.date >= existingEntry.date) {
         latestBalances.set(entry.description, entry);
       }
     }
   });
-  
+
   const totalAvailable = Array.from(latestBalances.values())
     .reduce((sum, entry) => sum + entry.amount, 0);
 
