@@ -1,23 +1,14 @@
+
 import React from 'react';
 import { SavingEntry } from '../types';
-import { FireIcon } from './icons/FireIcon';
 
 interface DashboardProps {
   savings: SavingEntry[];
 }
 
-// Tarjeta principal para métricas destacadas
-const StatCard: React.FC<{ title: string; value: string; children?: React.ReactNode; className?: string }> = ({ title, value, children, className }) => (
-    <div className={`bg-surface p-6 rounded-xl shadow-lg text-center sm:text-left ${className}`}>
-        <h3 className="text-md font-medium text-text-secondary">{title}</h3>
-        <p className="text-4xl font-bold text-primary-dark mt-2">{value}</p>
-        {children}
-    </div>
-);
-
 // Tarjeta compacta para métricas secundarias
 const MiniStatCard: React.FC<{ title: string; value: string; icon?: React.ReactNode; }> = ({ title, value, icon }) => (
-    <div className="bg-surface p-4 rounded-xl shadow-lg text-center flex flex-col items-center justify-center">
+    <div className="bg-surface p-4 rounded-xl shadow-lg text-center flex flex-col items-center justify-center h-full">
         {icon}
         <h4 className="text-xs font-medium text-text-secondary uppercase tracking-wider">{title}</h4>
         <p className="text-2xl font-semibold text-primary-dark mt-1">{value}</p>
@@ -42,12 +33,25 @@ export const Dashboard: React.FC<DashboardProps> = ({ savings }) => {
   // 1. Total Ahorrado (General)
   const totalSaved = savings.reduce((sum, entry) => sum + entry.amount, 0);
 
-  // 2. Ahorro de Hoy
+  // 2. Total Disponible (suma de saldos específicos)
+  const availableBalanceConcepts = [
+    'Saldo en efectivo',
+    'Saldo en Revolut Mama',
+    'Saldo en Revolut Javi',
+    'Saldo en PayPal Mama',
+    'Saldo en PayPal Javi'
+  ];
+  const totalAvailable = savings
+    .filter(s => availableBalanceConcepts.includes(s.description))
+    .reduce((sum, entry) => sum + entry.amount, 0);
+
+
+  // 3. Ahorro de Hoy
   const todaySavings = savings
     .filter(s => s.date === todayStr)
     .reduce((sum, entry) => sum + entry.amount, 0);
   
-  // 3. Ahorro de los Últimos 7 Días
+  // 4. Ahorro de los Últimos 7 Días
   const todayDateOnly = new Date();
   todayDateOnly.setHours(0, 0, 0, 0);
 
@@ -64,7 +68,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ savings }) => {
     })
     .reduce((sum, entry) => sum + entry.amount, 0);
 
-  // 4. Ahorro de Este Mes
+  // 5. Ahorro de Este Mes
   const currentYear = today.getFullYear();
   const currentMonth = today.getMonth();
   const thisMonthSavings = savings
@@ -74,7 +78,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ savings }) => {
     })
     .reduce((sum, entry) => sum + entry.amount, 0);
 
-  // 5. Mejor Día
+  // 6. Mejor Día
   const dailyTotals = savings.reduce((acc: Record<string, number>, entry) => {
       acc[entry.date] = (acc[entry.date] || 0) + entry.amount;
       return acc;
@@ -84,11 +88,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ savings }) => {
   // The initial 0 ensures a correct result for cases with no savings.
   const bestDayAmount = Math.max(0, ...Object.keys(dailyTotals).map(key => dailyTotals[key]));
 
-  // 6. Ahorro Diario Promedio
+  // 7. Ahorro Diario Promedio
   const uniqueDays = new Set(savings.map(s => s.date)).size;
   const averageDaily = uniqueDays > 0 ? totalSaved / uniqueDays : 0;
   
-  // 7. Racha (Streak)
+  // 8. Racha (Streak)
   const calculateStreak = (entries: SavingEntry[]): number => {
     if (entries.length === 0) return 0;
 
@@ -129,13 +133,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ savings }) => {
 
   return (
     <div className="space-y-6">
-        {/* Fila de métricas principales */}
-        <div className="text-center sm:text-left">
-            <StatCard title="Total Ahorrado" value={formatCurrency(totalSaved)} />
-        </div>
-        
-        {/* Fila de métricas detalladas */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <MiniStatCard title="Total Ahorrado" value={formatCurrency(totalSaved)} />
+            <MiniStatCard title="Total Disponible" value={formatCurrency(totalAvailable)} />
             <MiniStatCard title="Hoy" value={formatCurrency(todaySavings)} />
             <MiniStatCard title="Últimos 7 Días" value={formatCurrency(thisWeekSavings)} />
             <MiniStatCard title="Este Mes" value={formatCurrency(thisMonthSavings)} />
