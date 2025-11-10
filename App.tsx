@@ -14,7 +14,6 @@ import { ConfirmModal } from './components/ConfirmModal';
 import type { SavingEntry, SavingsGoal } from './types';
 import { GoalCard } from './components/GoalCard';
 import { Confetti } from './components/Confetti';
-import { Login } from './components/Login';
 import { ThemeProvider } from './contexts/ThemeContext';
 
 
@@ -23,8 +22,6 @@ function AppContent() {
   const [goal, setGoal] = useLocalStorage<SavingsGoal | null>('goal', null);
   const [notifiedMilestones, setNotifiedMilestones] = useLocalStorage<{ [key: string]: boolean }>('notifiedMilestones', {});
   
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-
   const [isManageDayModalOpen, setManageDayModalOpen] = useState(false);
   const [isGoalSetterOpen, setIsGoalSetterOpen] = useState(false);
   const [isConceptManagerOpen, setConceptManagerOpen] = useState(false);
@@ -44,7 +41,7 @@ function AppContent() {
 
 
   useEffect(() => {
-    if (!goal || !isAuthenticated) return;
+    if (!goal) return;
 
     const totalSaved = savings.reduce((sum, entry) => sum + entry.amount, 0);
     const goalProgress = goal.target > 0 ? (totalSaved / goal.target) * 100 : 0;
@@ -79,11 +76,7 @@ function AppContent() {
             checkAndNotify('deadline_7', diffDays > 1 && diffDays <= 7, { title: 'Una semana restante', message: `Quedan 7 días o menos para tu meta.`, type: 'warning' });
         }
     }
-  }, [savings, goal, addNotification, notifiedMilestones, setNotifiedMilestones, isAuthenticated]);
-
-  const handleLoginSuccess = () => {
-    setIsAuthenticated(true);
-  };
+  }, [savings, goal, addNotification, notifiedMilestones, setNotifiedMilestones]);
 
   const handleDayClick = useCallback((date: string) => {
     setSelectedDate(date);
@@ -163,10 +156,6 @@ function AppContent() {
     setSavings(prev => prev.map(s => s.description === name ? { ...s, description: 'Otro ingreso' } : s));
     deleteConcept(name);
   };
-
-  if (!isAuthenticated) {
-    return <Login onLoginSuccess={handleLoginSuccess} />;
-  }
 
   return (
     <div className="min-h-screen bg-background text-text-primary pb-24">
