@@ -42,23 +42,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ savings }) => {
     'Saldo en PayPal Javi'
   ];
   
-  // This logic calculates the total available balance by summing the *latest* entry
-  // for each of the specified balance concepts. This prevents summing up historical
-  // balance snapshots and gives a more accurate view of the current available funds.
-  const latestBalances = new Map<string, SavingEntry>();
-
-  savings.forEach(entry => {
-    if (availableBalanceConcepts.includes(entry.description)) {
-      const existingEntry = latestBalances.get(entry.description);
-      // If we haven't seen this concept before, or if the current entry's date
-      // is the same or newer, update it. This ensures we have the latest balance.
-      if (!existingEntry || entry.date >= existingEntry.date) {
-        latestBalances.set(entry.description, entry);
-      }
-    }
-  });
-
-  const totalAvailable = Array.from(latestBalances.values())
+  // This logic calculates the total available balance by summing up *all* entries
+  // that match one of the specified balance concepts. This treats them as cumulative
+  // accounts rather than just the latest snapshot.
+  const totalAvailable = savings
+    .filter(entry => availableBalanceConcepts.includes(entry.description))
     .reduce((sum, entry) => sum + entry.amount, 0);
 
 
