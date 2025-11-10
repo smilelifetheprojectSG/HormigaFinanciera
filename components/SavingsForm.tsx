@@ -60,10 +60,10 @@ export const SavingsForm: React.FC<SavingsFormProps> = ({ isOpen, onClose, onSav
       // Retrasar el reseteo para que no se vea el cambio durante la animación de salida
       setTimeout(resetForm, 200);
     } else {
-        // Al abrir, si hay ahorros, la lista no está colapsada
-        setListCollapsed(savingsForDate.length === 0);
+        // Al abrir, la lista de movimientos estará oculta por defecto.
+        setListCollapsed(true);
     }
-  }, [isOpen, savingsForDate.length]);
+  }, [isOpen]);
 
   useEffect(() => {
     if (entryToEdit) {
@@ -190,35 +190,36 @@ export const SavingsForm: React.FC<SavingsFormProps> = ({ isOpen, onClose, onSav
                         </button>
                     </div>
                 </div>
-                {!isListCollapsed && savingsForDate.length > 0 && (
-                    <ul className="space-y-2 animate-fade-in-up">
-                        {savingsForDate.map(entry => {
-                            const isIncome = entry.amount >= 0;
-                            return (
-                                <li key={entry.id} className={`p-3 rounded-lg flex items-start transition-colors ${!isIncome ? 'bg-red-subtle-bg' : (entry.id === entryToEdit?.id ? 'bg-primary/10' : 'bg-background')}`}>
-                                    {isIncome ? 
-                                      <CheckCircleIcon className="w-6 h-6 text-primary mr-3 mt-0.5 flex-shrink-0" />
-                                      : <MinusCircleIcon className="w-6 h-6 text-red-500 mr-3 mt-0.5 flex-shrink-0" />
-                                    }
-                                    <div className="flex-grow">
-                                        <p className="font-semibold text-text-primary">{entry.description}</p>
-                                        <p className={`text-sm font-medium ${isIncome ? 'text-primary' : 'text-red-600'}`}>
-                                          {entry.currency === 'USD' 
-                                              ? `${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(entry.originalAmount)} (${formatCurrency(entry.amount)})`
-                                              : formatCurrency(entry.amount)}
-                                        </p>
-                                        {entry.note && <p className="text-sm text-text-secondary mt-1">{entry.note}</p>}
-                                    </div>
-                                    <div className="flex items-center ml-2 flex-shrink-0">
-                                        <button onClick={() => handleEdit(entry)} className="p-2 text-text-secondary hover:text-primary transition-colors"><PencilIcon className="w-5 h-5"/></button>
-                                        <button onClick={() => onDelete(entry.id)} className="p-2 text-text-secondary hover:text-red-500 transition-colors"><TrashIcon className="w-5 h-5"/></button>
-                                    </div>
-                                </li>
-                            );
-                        })}
-                    </ul>
-                )}
-                 {!isListCollapsed && savingsForDate.length === 0 && (
+                {savingsForDate.length > 0 ? (
+                    !isListCollapsed && (
+                        <ul className="space-y-2 animate-fade-in-up">
+                            {savingsForDate.map(entry => {
+                                const isIncome = entry.amount >= 0;
+                                return (
+                                    <li key={entry.id} className={`p-3 rounded-lg flex items-start transition-colors ${!isIncome ? 'bg-red-subtle-bg' : (entry.id === entryToEdit?.id ? 'bg-primary/10' : 'bg-background')}`}>
+                                        {isIncome ? 
+                                        <CheckCircleIcon className="w-6 h-6 text-primary mr-3 mt-0.5 flex-shrink-0" />
+                                        : <MinusCircleIcon className="w-6 h-6 text-red-500 mr-3 mt-0.5 flex-shrink-0" />
+                                        }
+                                        <div className="flex-grow">
+                                            <p className="font-semibold text-text-primary">{entry.description}</p>
+                                            <p className={`text-sm font-medium ${isIncome ? 'text-primary' : 'text-red-600'}`}>
+                                            {entry.currency === 'USD' 
+                                                ? `${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(entry.originalAmount)} (${formatCurrency(entry.amount)})`
+                                                : formatCurrency(entry.amount)}
+                                            </p>
+                                            {entry.note && <p className="text-sm text-text-secondary mt-1">{entry.note}</p>}
+                                        </div>
+                                        <div className="flex items-center ml-2 flex-shrink-0">
+                                            <button onClick={() => handleEdit(entry)} className="p-2 text-text-secondary hover:text-primary transition-colors"><PencilIcon className="w-5 h-5"/></button>
+                                            <button onClick={() => onDelete(entry.id)} className="p-2 text-text-secondary hover:text-red-500 transition-colors"><TrashIcon className="w-5 h-5"/></button>
+                                        </div>
+                                    </li>
+                                );
+                            })}
+                        </ul>
+                    )
+                ) : (
                     <p className="text-center text-sm text-text-secondary py-4 bg-background rounded-lg">No hay movimientos para este día.</p>
                 )}
             </div>
