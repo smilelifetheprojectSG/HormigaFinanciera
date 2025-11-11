@@ -87,18 +87,35 @@ function AppContent() {
     setManageDayModalOpen(false);
   };
 
-  const handleSaveEntry = (entryData: Omit<SavingEntry, 'id'> | SavingEntry) => {
-    if ('id' in entryData) {
-      // Editing existing entry
-      setSavings(prev => prev.map(e => e.id === entryData.id ? entryData as SavingEntry : e));
-    } else {
-      // Adding new entry
-      setSavings(prev => [...prev, { ...entryData, id: uuidv4() }].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-      // Trigger confetti
-      if(entryData.amount > 0) {
+  const handleSaveEntry = (entryData: (Omit<SavingEntry, 'id'> | SavingEntry) | (Omit<SavingEntry, 'id'> | SavingEntry)[]) => {
+    const entriesToProcess = Array.isArray(entryData) ? entryData : [entryData];
+    let newEntriesAdded = false;
+    let hasPositiveAmount = false;
+
+    setSavings(prev => {
+        let updatedSavings = [...prev];
+        
+        for (const entry of entriesToProcess) {
+            if ('id' in entry) {
+                // Editing existing entry
+                updatedSavings = updatedSavings.map(e => e.id === entry.id ? entry as SavingEntry : e);
+            } else {
+                // Adding new entry
+                updatedSavings.push({ ...entry, id: uuidv4() });
+                newEntriesAdded = true;
+                if (entry.amount > 0) {
+                    hasPositiveAmount = true;
+                }
+            }
+        }
+        
+        return updatedSavings.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    });
+    
+    // Trigger confetti only for new entries with a positive amount. A withdrawal will trigger this.
+    if (newEntriesAdded && hasPositiveAmount) {
         setShowConfetti(true);
         setTimeout(() => setShowConfetti(false), 4000);
-      }
     }
   };
 
@@ -166,7 +183,6 @@ function AppContent() {
         <SavingsList 
             savings={savings} 
             selectedDate={selectedDate}
-            onDateChange={setSelectedDate}
             onDayClick={handleDayClick}
         />
         <GoalCard 

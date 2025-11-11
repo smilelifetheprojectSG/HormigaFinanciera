@@ -4,30 +4,16 @@ import { ChevronLeftIcon } from './icons/ChevronLeftIcon';
 import { ChevronRightIcon } from './icons/ChevronRightIcon';
 
 interface SavingsListProps {
-  savings: SavingEntry[];
-  selectedDate: string;
-  onDateChange: (date: string) => void;
-  onDayClick: (date: string) => void;
-}
-
-const Calendar: React.FC<{
     savings: SavingEntry[];
     selectedDate: string;
-    onDateChange: (date: string) => void;
     onDayClick: (date: string) => void;
-}> = ({ savings, selectedDate, onDateChange, onDayClick }) => {
+}
+
+const Calendar: React.FC<SavingsListProps> = ({ savings, selectedDate, onDayClick }) => {
     const [currentMonth, setCurrentMonth] = useState(() => {
         const [year, month] = selectedDate.split('-').map(Number);
         return new Date(Date.UTC(year, month - 1, 1));
     });
-
-    useEffect(() => {
-        const [year, month] = selectedDate.split('-').map(Number);
-        const firstOfSelectedMonth = new Date(Date.UTC(year, month - 1, 1));
-        if (firstOfSelectedMonth.getTime() !== currentMonth.getTime()) {
-            setCurrentMonth(firstOfSelectedMonth);
-        }
-    }, [selectedDate, currentMonth]);
 
     const savingsByDate = useMemo(() => {
         const map = new Map<string, boolean>();
@@ -115,7 +101,6 @@ const Calendar: React.FC<{
                          key={i}
                          onClick={() => {
                             if (isCurrentMonth) {
-                                onDateChange(dateStr);
                                 onDayClick(dateStr);
                             }
                          }}
@@ -134,6 +119,55 @@ const Calendar: React.FC<{
     );
 };
 
+const Balances: React.FC<{ savings: SavingEntry[] }> = ({ savings }) => {
+    const formatCurrency = (value: number) => {
+        return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(value).replace(/\s/g, '\u2009');
+    };
+
+    const balances = useMemo(() => {
+        const balanceMap = new Map<string, number>();
+
+        const excludedConcepts = new Set([
+            'Saldo en efectivo',
+            'Saldo en Revolut Mama',
+            'Saldo en Revolut Javi',
+            'Saldo en PayPal Mama',
+            'Saldo en PayPal Javi',
+            'Otro ingreso'
+        ]);
+
+        for (const entry of savings) {
+            if (!excludedConcepts.has(entry.description)) {
+                const currentBalance = balanceMap.get(entry.description) || 0;
+                balanceMap.set(entry.description, currentBalance + entry.amount);
+            }
+        }
+        
+        return Array.from(balanceMap.entries())
+            .filter(([, balance]) => balance > 0)
+            .sort((a, b) => b[1] - a[1]);
+
+    }, [savings]);
+
+    if (balances.length === 0) {
+        return null;
+    }
+
+    return (
+        <div className="mt-6 animate-fade-in-up">
+            <h3 className="text-lg font-semibold text-text-primary mb-3">Saldos en Apps</h3>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {balances.map(([concept, balance]) => (
+                    <div key={concept} className="bg-surface p-3 rounded-lg shadow-md transition-transform hover:scale-105">
+                        <p className="text-sm text-text-secondary truncate font-medium" title={concept}>{concept}</p>
+                        <p className="text-xl font-bold text-primary-dark mt-1">{formatCurrency(balance)}</p>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+};
+
 
 export const SavingsList: React.FC<SavingsListProps> = (props) => {
   return (
@@ -141,6 +175,7 @@ export const SavingsList: React.FC<SavingsListProps> = (props) => {
         <h2 className="text-xl font-bold text-primary-dark mb-4">Mis Ahorros</h2>
         <div className="max-w-lg mx-auto">
             <Calendar {...props} />
+            <Balances savings={props.savings} />
         </div>
       </div>
   );

@@ -14,7 +14,7 @@ import { MinusCircleIcon } from './icons/MinusCircleIcon';
 interface SavingsFormProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (entry: Omit<SavingEntry, 'id'> | SavingEntry) => void;
+  onSave: (entry: (Omit<SavingEntry, 'id'> | SavingEntry) | (Omit<SavingEntry, 'id'> | SavingEntry)[]) => void;
   onDelete: (id: string) => void;
   date: string;
   allSavings: SavingEntry[];
@@ -22,9 +22,18 @@ interface SavingsFormProps {
   onManageConcepts: () => void;
 }
 
+const destinationConcepts = [
+    'Saldo en efectivo',
+    'Saldo en Revolut Mama',
+    'Saldo en Revolut Javi',
+    'Saldo en PayPal Mama',
+    'Saldo en PayPal Javi'
+];
+
 export const SavingsForm: React.FC<SavingsFormProps> = ({ isOpen, onClose, onSave, onDelete, date, allSavings, concepts, onManageConcepts }) => {
   const [amount, setAmount] = useState('');
   const [concept, setConcept] = useState('');
+  const [destinationConcept, setDestinationConcept] = useState('');
   const [customConcept, setCustomConcept] = useState('');
   const [note, setNote] = useState('');
   const [currency, setCurrency] = useState<'EUR' | 'USD'>('EUR');
@@ -32,21 +41,25 @@ export const SavingsForm: React.FC<SavingsFormProps> = ({ isOpen, onClose, onSav
   const [error, setError] = useState('');
   const [entryToEdit, setEntryToEdit] = useState<SavingEntry | null>(null);
   const [isListCollapsed, setListCollapsed] = useState(false);
-  const [transactionType, setTransactionType] = useState<'income' | 'expense'>('income');
+  const [transactionType, setTransactionType] = useState<'income' | 'expense' | 'withdrawal'>('income');
 
   const savingsForDate = useMemo(() => 
-    allSavings.filter(s => s.date === date)
-    .sort((a,b) => new Date().getTime() - new Date().getTime()), // Keep insertion order for the day
+    allSavings.filter(s => s.date === date), // Order is preserved from allSavings
   [allSavings, date]);
 
   const totalForDay = useMemo(() =>
     savingsForDate.reduce((sum, entry) => sum + entry.amount, 0),
   [savingsForDate]);
 
+  const sourceConcepts = useMemo(() => 
+    concepts.filter(c => !destinationConcepts.includes(c) && c !== 'Otro ingreso')
+  , [concepts]);
+
   const resetForm = () => {
     setAmount('');
     setConcept('');
     setCustomConcept('');
+    setDestinationConcept('');
     setNote('');
     setError('');
     setEntryToEdit(null);
@@ -93,9 +106,9 @@ export const SavingsForm: React.FC<SavingsFormProps> = ({ isOpen, onClose, onSav
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const finalConcept = concept === 'Otro ingreso' ? customConcept : concept;
-    if (!amount || !finalConcept) {
-      setError('El concepto y la cantidad son obligatorios.');
+    
+    if (!amount) {
+      setError('La cantidad es obligatoria.');
       return;
     }
     const numericAmount = parseFloat(amount.replace(',', '.'));
@@ -106,9 +119,7 @@ export const SavingsForm: React.FC<SavingsFormProps> = ({ isOpen, onClose, onSav
     
     setError('');
     
-    const signedNumericAmount = transactionType === 'income' ? numericAmount : -numericAmount;
-
-    let finalAmountInEur = signedNumericAmount;
+    let finalAmountInEur = numericAmount;
     let finalExchangeRate: number | undefined = undefined;
 
     if (currency === 'USD') {
@@ -117,26 +128,72 @@ export const SavingsForm: React.FC<SavingsFormProps> = ({ isOpen, onClose, onSav
             setError('La tasa de cambio debe ser un número positivo.');
             return;
         }
-        finalAmountInEur = signedNumericAmount * numericExchangeRate;
+        finalAmountInEur = numericAmount * numericExchangeRate;
         finalExchangeRate = numericExchangeRate;
     }
 
-    const newEntry: Omit<SavingEntry, 'id'> = {
-      amount: finalAmountInEur,
-      originalAmount: signedNumericAmount,
-      currency: currency,
-      exchangeRate: finalExchangeRate,
-      description: finalConcept.trim(),
-      note: note.trim() || undefined,
-      date,
-    };
+    if (transactionType === 'withdrawal') {
+        if (!concept) {
+            setError('Debes seleccionar un origen para el retiro.');
+            return;
+        }
+        if (!destinationConcept) {
+            setError('Debes seleccionar un destino para el retiro.');
+            return;
+        }
+        if (concept === destinationConcept) {
+            setError('El origen y el destino no pueden ser iguales.');
+            return;
+        }
 
+        const noteText = note.trim();
+        const expenseEntry: Omit<SavingEntry, 'id'> = {
+            amount: -finalAmountInEur,
+            originalAmount: -numericAmount,
+            currency,
+            exchangeRate: finalExchangeRate,
+            description: concept,
+            note: `Retiro hacia ${destinationConcept}${noteText ? ` (${noteText})` : ''}`,
+            date,
+        };
+        const incomeEntry: Omit<SavingEntry, 'id'> = {
+            amount: finalAmountInEur,
+            originalAmount: numericAmount,
+            currency,
+            exchangeRate: finalExchangeRate,
+            description: destinationConcept,
+            note: `Retiro desde ${concept}${noteText ? ` (${noteText})` : ''}`,
+            date,
+        };
+        
+        onSave([expenseEntry, incomeEntry]);
+    } else { // Income or Expense
+        const finalConcept = concept === 'Otro ingreso' ? customConcept : concept;
+        if (!finalConcept) {
+          setError('El concepto es obligatorio.');
+          return;
+        }
+        
+        const signedFinalAmount = transactionType === 'income' ? finalAmountInEur : -finalAmountInEur;
+        const signedOriginalAmount = transactionType === 'income' ? numericAmount : -numericAmount;
 
-    if (entryToEdit) {
-      onSave({ ...newEntry, id: entryToEdit.id });
-    } else {
-      onSave(newEntry);
+        const newEntry: Omit<SavingEntry, 'id'> = {
+          amount: signedFinalAmount,
+          originalAmount: signedOriginalAmount,
+          currency: currency,
+          exchangeRate: finalExchangeRate,
+          description: finalConcept.trim(),
+          note: note.trim() || undefined,
+          date,
+        };
+
+        if (entryToEdit) {
+          onSave({ ...newEntry, id: entryToEdit.id });
+        } else {
+          onSave(newEntry);
+        }
     }
+    
     resetForm();
   };
   
@@ -161,6 +218,15 @@ export const SavingsForm: React.FC<SavingsFormProps> = ({ isOpen, onClose, onSav
   const formatCurrency = (value: number) => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(value).replace(/\s/g, '\u2009');
 
   if (!isOpen) return null;
+
+  const submitButtonText = entryToEdit ? 'Guardar Cambios' : 
+    transactionType === 'income' ? 'Añadir Ingreso' :
+    transactionType === 'expense' ? 'Restar Gasto' :
+    'Realizar Retiro';
+    
+  const submitButtonClass = transactionType === 'expense' ? 'bg-red-600 hover:bg-red-700' :
+    transactionType === 'withdrawal' ? 'bg-amber-500 hover:bg-amber-600' :
+    'bg-primary hover:bg-primary-dark';
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50 p-4">
@@ -231,12 +297,15 @@ export const SavingsForm: React.FC<SavingsFormProps> = ({ isOpen, onClose, onSav
                 <form onSubmit={handleSubmit} noValidate className="space-y-4">
                      <div>
                         <label className="block text-sm font-medium text-text-secondary mb-1">Tipo de Movimiento</label>
-                        <div className="flex items-center space-x-2 bg-background border border-border rounded-md p-1 w-min">
+                        <div className="flex items-center space-x-2 bg-background border border-border rounded-md p-1 w-auto">
                             <button type="button" onClick={() => setTransactionType('income')} className={`px-3 py-1 text-sm rounded-md transition-colors ${transactionType === 'income' ? 'bg-primary text-white shadow-sm' : 'text-text-secondary hover:bg-subtle-button-hover-bg'}`}>
                                 Ingreso
                             </button>
                             <button type="button" onClick={() => setTransactionType('expense')} className={`px-3 py-1 text-sm rounded-md transition-colors ${transactionType === 'expense' ? 'bg-red-600 text-white shadow-sm' : 'text-text-secondary hover:bg-subtle-button-hover-bg'}`}>
                                 Gasto
+                            </button>
+                            <button type="button" onClick={() => setTransactionType('withdrawal')} disabled={!!entryToEdit} className={`px-3 py-1 text-sm rounded-md transition-colors ${transactionType === 'withdrawal' ? 'bg-amber-500 text-white shadow-sm' : 'text-text-secondary hover:bg-subtle-button-hover-bg'} disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed`}>
+                                Retiro
                             </button>
                         </div>
                     </div>
@@ -259,36 +328,67 @@ export const SavingsForm: React.FC<SavingsFormProps> = ({ isOpen, onClose, onSav
                         </div>
                     )}
                 
-                    <div>
-                        <div className="flex justify-between items-center mb-1">
-                          <label htmlFor="concept" className="block text-sm font-medium text-text-secondary">App/Concepto</label>
-                          <button type="button" onClick={onManageConcepts} className="text-xs text-primary-light hover:text-primary font-medium flex items-center space-x-1 transition-colors">
-                              <Cog6ToothIcon className="w-4 h-4" />
-                              <span>Gestionar</span>
-                          </button>
-                        </div>
-                        <select
-                            id="concept"
-                            value={concept}
-                            onChange={(e) => setConcept(e.target.value)}
-                            className="w-full px-3 py-2 border border-border bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-primary-light focus:border-primary-light"
-                        >
-                            <option value="" disabled>Selecciona un concepto...</option>
-                            {concepts.map(c => <option key={c} value={c}>{c}</option>)}
-                        </select>
-                    </div>
-                    {concept === 'Otro ingreso' && (
-                         <div className="animate-fade-in-up">
-                            <label htmlFor="custom-concept" className="block text-sm font-medium text-text-secondary mb-1">Nombre del Concepto</label>
-                            <input
-                              id="custom-concept"
-                              type="text"
-                              value={customConcept}
-                              onChange={(e) => setCustomConcept(e.target.value)}
-                              className="w-full px-3 py-2 border border-border bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-primary-light focus:border-primary-light"
-                              placeholder="Ej. Venta en Vinted"
-                            />
-                        </div>
+                    {transactionType === 'withdrawal' ? (
+                        <>
+                            <div>
+                                <label htmlFor="concept" className="block text-sm font-medium text-text-secondary mb-1">Desde (Origen)</label>
+                                <select
+                                    id="concept"
+                                    value={concept}
+                                    onChange={(e) => setConcept(e.target.value)}
+                                    className="w-full px-3 py-2 border border-border bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-primary-light focus:border-primary-light"
+                                >
+                                    <option value="" disabled>Selecciona un origen...</option>
+                                    {sourceConcepts.map(c => <option key={c} value={c}>{c}</option>)}
+                                </select>
+                            </div>
+                            <div>
+                                <label htmlFor="destination" className="block text-sm font-medium text-text-secondary mb-1">Hacia (Destino)</label>
+                                <select
+                                    id="destination"
+                                    value={destinationConcept}
+                                    onChange={(e) => setDestinationConcept(e.target.value)}
+                                    className="w-full px-3 py-2 border border-border bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-primary-light focus:border-primary-light"
+                                >
+                                    <option value="" disabled>Selecciona un destino...</option>
+                                    {destinationConcepts.map(c => <option key={c} value={c}>{c}</option>)}
+                                </select>
+                            </div>
+                        </>
+                    ) : (
+                        <>
+                           <div>
+                                <div className="flex justify-between items-center mb-1">
+                                <label htmlFor="concept" className="block text-sm font-medium text-text-secondary">App/Concepto</label>
+                                <button type="button" onClick={onManageConcepts} className="text-xs text-primary-light hover:text-primary font-medium flex items-center space-x-1 transition-colors">
+                                    <Cog6ToothIcon className="w-4 h-4" />
+                                    <span>Gestionar</span>
+                                </button>
+                                </div>
+                                <select
+                                    id="concept"
+                                    value={concept}
+                                    onChange={(e) => setConcept(e.target.value)}
+                                    className="w-full px-3 py-2 border border-border bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-primary-light focus:border-primary-light"
+                                >
+                                    <option value="" disabled>Selecciona un concepto...</option>
+                                    {concepts.map(c => <option key={c} value={c}>{c}</option>)}
+                                </select>
+                            </div>
+                            {concept === 'Otro ingreso' && (
+                                <div className="animate-fade-in-up">
+                                    <label htmlFor="custom-concept" className="block text-sm font-medium text-text-secondary mb-1">Nombre del Concepto</label>
+                                    <input
+                                    id="custom-concept"
+                                    type="text"
+                                    value={customConcept}
+                                    onChange={(e) => setCustomConcept(e.target.value)}
+                                    className="w-full px-3 py-2 border border-border bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-primary-light focus:border-primary-light"
+                                    placeholder="Ej. Venta en Vinted"
+                                    />
+                                </div>
+                            )}
+                        </>
                     )}
                      <div>
                         <label className="block text-sm font-medium text-text-secondary mb-1">Moneda</label>
@@ -343,8 +443,8 @@ export const SavingsForm: React.FC<SavingsFormProps> = ({ isOpen, onClose, onSav
                         <button type="button" onClick={entryToEdit ? handleCancelEdit : onClose} className="px-4 py-2 bg-subtle-button-bg text-subtle-button-text font-medium rounded-lg hover:bg-subtle-button-hover-bg transition-colors">
                           {entryToEdit ? 'Cancelar Edición' : 'Cancelar'}
                         </button>
-                        <button type="submit" className={`px-4 py-2 text-white font-semibold rounded-lg shadow-sm hover:shadow-md transition-all ${transactionType === 'income' ? 'bg-primary hover:bg-primary-dark' : 'bg-red-600 hover:bg-red-700'}`}>
-                          {entryToEdit ? 'Guardar Cambios' : (transactionType === 'income' ? 'Añadir Ingreso' : 'Restar Gasto')}
+                        <button type="submit" className={`px-4 py-2 text-white font-semibold rounded-lg shadow-sm hover:shadow-md transition-all ${submitButtonClass}`}>
+                          {submitButtonText}
                         </button>
                      </div>
                 </form>
