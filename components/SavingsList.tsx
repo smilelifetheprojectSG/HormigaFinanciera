@@ -168,6 +168,60 @@ const Balances: React.FC<{ savings: SavingEntry[] }> = ({ savings }) => {
     );
 };
 
+const AvailableBalances: React.FC<{ savings: SavingEntry[] }> = ({ savings }) => {
+    const formatCurrency = (value: number) => {
+        return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(value).replace(/\s/g, '\u2009');
+    };
+
+    const availableBalances = useMemo(() => {
+        const balanceMap = new Map<string, number>();
+        const availableBalanceConcepts = [
+            'Saldo en efectivo',
+            'Saldo en Revolut Mama',
+            'Saldo en Revolut Javi',
+            'Saldo en PayPal Mama',
+            'Saldo en PayPal Javi'
+        ];
+
+        // Initialize all concepts with 0 balance to ensure they are always displayed
+        for (const concept of availableBalanceConcepts) {
+            balanceMap.set(concept, 0);
+        }
+
+        // Accumulate balances from savings entries
+        for (const entry of savings) {
+            if (availableBalanceConcepts.includes(entry.description)) {
+                const currentBalance = balanceMap.get(entry.description) || 0;
+                balanceMap.set(entry.description, currentBalance + entry.amount);
+            }
+        }
+
+        // Keep the original, logical order
+        return Array.from(balanceMap.entries())
+            .sort((a, b) => availableBalanceConcepts.indexOf(a[0]) - availableBalanceConcepts.indexOf(b[0])); 
+            
+    }, [savings]);
+
+    // Don't render if there are no savings at all, to avoid clutter on first load.
+    if (savings.length === 0) {
+        return null;
+    }
+
+    return (
+        <div className="mt-6 animate-fade-in-up">
+            <h3 className="text-lg font-semibold text-text-primary mb-3">Saldos Disponibles</h3>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {availableBalances.map(([concept, balance]) => (
+                    <div key={concept} className="bg-surface p-3 rounded-lg shadow-md transition-transform hover:scale-105">
+                        <p className="text-sm text-text-secondary truncate font-medium" title={concept}>{concept}</p>
+                        <p className="text-xl font-bold text-primary-dark mt-1">{formatCurrency(balance)}</p>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+};
+
 
 export const SavingsList: React.FC<SavingsListProps> = (props) => {
   return (
@@ -176,6 +230,7 @@ export const SavingsList: React.FC<SavingsListProps> = (props) => {
         <div className="max-w-lg mx-auto">
             <Calendar {...props} />
             <Balances savings={props.savings} />
+            <AvailableBalances savings={props.savings} />
         </div>
       </div>
   );
