@@ -42,6 +42,8 @@ export const SavingsForm: React.FC<SavingsFormProps> = ({ isOpen, onClose, onSav
   const [entryToEdit, setEntryToEdit] = useState<SavingEntry | null>(null);
   const [isListCollapsed, setListCollapsed] = useState(false);
   const [transactionType, setTransactionType] = useState<'income' | 'expense' | 'withdrawal'>('income');
+  const [hasCommission, setHasCommission] = useState(false);
+  const [commissionAmount, setCommissionAmount] = useState('');
 
   const savingsForDate = useMemo(() => 
     allSavings.filter(s => s.date === date), // Order is preserved from allSavings
@@ -66,6 +68,8 @@ export const SavingsForm: React.FC<SavingsFormProps> = ({ isOpen, onClose, onSav
     setCurrency('EUR');
     setExchangeRate('0.92');
     setTransactionType('income');
+    setHasCommission(false);
+    setCommissionAmount('');
   };
   
   useEffect(() => {
@@ -146,8 +150,30 @@ export const SavingsForm: React.FC<SavingsFormProps> = ({ isOpen, onClose, onSav
             return;
         }
 
+        let numericCommissionAmount = 0;
+        let finalCommissionInEur = 0;
+
+        if (hasCommission) {
+            if (!commissionAmount) {
+                setError('La cantidad de la comisión es obligatoria.');
+                return;
+            }
+            numericCommissionAmount = parseFloat(commissionAmount.replace(',', '.'));
+            if (isNaN(numericCommissionAmount) || numericCommissionAmount <= 0) {
+                setError('La comisión debe ser un número positivo.');
+                return;
+            }
+            finalCommissionInEur = numericCommissionAmount;
+            if (currency === 'USD' && finalExchangeRate) {
+                finalCommissionInEur = numericCommissionAmount * finalExchangeRate;
+            }
+        }
+
         const noteText = note.trim();
-        const expenseEntry: Omit<SavingEntry, 'id'> = {
+        const entriesToSave: Omit<SavingEntry, 'id'>[] = [];
+
+        // 1. Gasto del retiro (desde el origen)
+        entriesToSave.push({
             amount: -finalAmountInEur,
             originalAmount: -numericAmount,
             currency,
@@ -155,8 +181,23 @@ export const SavingsForm: React.FC<SavingsFormProps> = ({ isOpen, onClose, onSav
             description: concept,
             note: `Retiro hacia ${destinationConcept}${noteText ? ` (${noteText})` : ''}`,
             date,
-        };
-        const incomeEntry: Omit<SavingEntry, 'id'> = {
+        });
+
+        // 2. Gasto de la comisión (desde el origen)
+        if (hasCommission && finalCommissionInEur > 0) {
+            entriesToSave.push({
+                amount: -finalCommissionInEur,
+                originalAmount: -numericCommissionAmount,
+                currency,
+                exchangeRate: finalExchangeRate,
+                description: concept, // La comisión también se resta del origen
+                note: `Comisión por retiro hacia ${destinationConcept}`,
+                date,
+            });
+        }
+        
+        // 3. Ingreso del retiro (hacia el destino)
+        entriesToSave.push({
             amount: finalAmountInEur,
             originalAmount: numericAmount,
             currency,
@@ -164,9 +205,10 @@ export const SavingsForm: React.FC<SavingsFormProps> = ({ isOpen, onClose, onSav
             description: destinationConcept,
             note: `Retiro desde ${concept}${noteText ? ` (${noteText})` : ''}`,
             date,
-        };
-        
-        onSave([expenseEntry, incomeEntry]);
+        });
+
+        onSave(entriesToSave);
+
     } else { // Income or Expense
         const finalConcept = concept === 'Otro ingreso' ? customConcept : concept;
         if (!finalConcept) {
@@ -329,7 +371,7 @@ export const SavingsForm: React.FC<SavingsFormProps> = ({ isOpen, onClose, onSav
                     )}
                 
                     {transactionType === 'withdrawal' ? (
-                        <>
+                        <div className="animate-fade-in-up space-y-4">
                             <div>
                                 <label htmlFor="concept" className="block text-sm font-medium text-text-secondary mb-1">Desde (Origen)</label>
                                 <select
@@ -354,7 +396,35 @@ export const SavingsForm: React.FC<SavingsFormProps> = ({ isOpen, onClose, onSav
                                     {destinationConcepts.map(c => <option key={c} value={c}>{c}</option>)}
                                 </select>
                             </div>
-                        </>
+                            <div className="space-y-2">
+                                <label className="flex items-center space-x-2 text-sm text-text-secondary cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        checked={hasCommission}
+                                        onChange={(e) => {
+                                            setHasCommission(e.target.checked);
+                                            if (!e.target.checked) setCommissionAmount('');
+                                        }}
+                                        className="rounded border-border text-primary focus:ring-primary-light"
+                                    />
+                                    <span>Añadir comisión por retiro</span>
+                                </label>
+                                {hasCommission && (
+                                    <div className="animate-fade-in-up">
+                                        <label htmlFor="commission-amount" className="block text-sm font-medium text-text-secondary mb-1">Cantidad de la Comisión ({currency === 'EUR' ? '€' : '$'})</label>
+                                        <input
+                                          id="commission-amount"
+                                          type="text"
+                                          inputMode="decimal"
+                                          value={commissionAmount}
+                                          onChange={(e) => setCommissionAmount(e.target.value)}
+                                          className="w-full px-3 py-2 border border-border bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-primary-light focus:border-primary-light"
+                                          placeholder="0,00"
+                                        />
+                                    </div>
+                                )}
+                            </div>
+                        </div>
                     ) : (
                         <>
                            <div>
