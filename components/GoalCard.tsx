@@ -22,42 +22,36 @@ export const GoalCard: React.FC<GoalCardProps> = ({ savings, goal, onSetGoal }) 
         return { dailyTarget: null, todaySavings: 0, dailyProgress: 0, deadlineText: null };
     }
 
-    // Calculate today's savings regardless of the goal
     const today = new Date();
     const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
     const currentTodaySavings = savings
       .filter(s => s.date === todayStr)
       .reduce((sum, entry) => sum + entry.amount, 0);
 
-    // All subsequent calculations depend on the deadline
     if (!goal.deadline) {
         return { dailyTarget: null, todaySavings: currentTodaySavings, dailyProgress: 0, deadlineText: null };
     }
 
-    // --- Robust Date Handling ---
+    // --- Robust UTC-based Date Handling ---
     const [year, month, day] = goal.deadline.split('-').map(Number);
-    const deadlineDate = new Date(year, month - 1, day); // At 00:00:00 local time
+    const deadlineUTC = new Date(Date.UTC(year, month - 1, day));
 
-    const todayStartOfDay = new Date();
-    todayStartOfDay.setHours(0, 0, 0, 0);
+    const todayUTC = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
     
-    // For deadline text (days remaining)
-    const diffTimeText = deadlineDate.getTime() - todayStartOfDay.getTime();
-    const diffDays = Math.round(diffTimeText / (1000 * 60 * 60 * 24));
+    const diffTime = deadlineUTC.getTime() - todayUTC.getTime();
+    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
     
     let deadlineStr: string;
     if (diffDays < 0) deadlineStr = 'Plazo vencido';
     else if (diffDays === 0) deadlineStr = '¡Hoy es el último día!';
     else deadlineStr = `${diffDays} día${diffDays !== 1 ? 's' : ''} restante${diffDays !== 1 ? 's' : ''}`;
     
-    // For daily target calculation
     const remainingAmount = goal.target - totalSaved;
     let currentDailyTarget: number | null = null;
     let currentDailyProgress = 0;
 
-    if (remainingAmount > 0 && deadlineDate >= todayStartOfDay) {
-      // Calculate inclusive number of days from today until the deadline
-      const remainingDays = Math.round(diffTimeText / (1000 * 60 * 60 * 24)) + 1;
+    if (remainingAmount > 0 && deadlineUTC >= todayUTC) {
+      const remainingDays = diffDays + 1;
       
       if (remainingDays > 0) {
         currentDailyTarget = remainingAmount / remainingDays;

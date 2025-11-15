@@ -41,21 +41,22 @@ export const GoalSetter: React.FC<GoalSetterProps> = ({ isOpen, onClose, onSave,
     const remainingAmount = numericTarget - totalSaved;
     if (remainingAmount <= 0) return null;
 
-    // Parse deadline string as local date at midnight.
+    // --- UTC-based date calculation for accuracy ---
     const [year, month, day] = deadline.split('-').map(Number);
-    const deadlineDate = new Date(year, month - 1, day);
+    // Create deadline date at midnight UTC
+    const deadlineUTC = new Date(Date.UTC(year, month - 1, day));
 
-    // Get today's date at local midnight.
+    // Get today's date at midnight UTC
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    if (deadlineDate < today) return null; // Deadline has passed.
-
-    const diffTime = deadlineDate.getTime() - today.getTime();
+    const todayUTC = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
     
-    // Calculate the number of full days between today and the deadline, then add 1 to make it inclusive.
-    const remainingDays = Math.round(diffTime / (1000 * 60 * 60 * 24)) + 1;
+    if (deadlineUTC < todayUTC) return null; // Deadline has passed.
+
+    const diffTime = deadlineUTC.getTime() - todayUTC.getTime();
     
+    // Calculate days by dividing the millisecond difference. Add 1 for inclusive range.
+    const remainingDays = (diffTime / (1000 * 60 * 60 * 24)) + 1;
+
     if (remainingDays <= 0) return null;
 
     return remainingAmount / remainingDays;
