@@ -11,6 +11,28 @@ interface GoalSetterProps {
   totalSaved: number;
 }
 
+// Helper function for robust date calculation
+const getDaysRemaining = (deadline: string): number => {
+    // Parse deadline string to UTC date at midnight
+    const [year, month, day] = deadline.split('-').map(Number);
+    const deadlineUTC = new Date(Date.UTC(year, month - 1, day));
+
+    // Get today's date as UTC at midnight
+    const today = new Date();
+    const todayUTC = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
+    
+    if (deadlineUTC < todayUTC) return 0;
+
+    // Calculate day number since epoch for both dates
+    const msPerDay = 1000 * 60 * 60 * 24;
+    const deadlineDayNum = Math.floor(deadlineUTC.getTime() / msPerDay);
+    const todayDayNum = Math.floor(todayUTC.getTime() / msPerDay);
+
+    // Add 1 for an inclusive count
+    return deadlineDayNum - todayDayNum + 1;
+};
+
+
 export const GoalSetter: React.FC<GoalSetterProps> = ({ isOpen, onClose, onSave, onDelete, currentGoal, totalSaved }) => {
   const [target, setTarget] = useState('');
   const [description, setDescription] = useState('');
@@ -41,21 +63,7 @@ export const GoalSetter: React.FC<GoalSetterProps> = ({ isOpen, onClose, onSave,
     const remainingAmount = numericTarget - totalSaved;
     if (remainingAmount <= 0) return null;
 
-    // --- UTC-based date calculation for accuracy ---
-    const [year, month, day] = deadline.split('-').map(Number);
-    // Create deadline date at midnight UTC
-    const deadlineUTC = new Date(Date.UTC(year, month - 1, day));
-
-    // Get today's date at midnight UTC
-    const today = new Date();
-    const todayUTC = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
-    
-    if (deadlineUTC < todayUTC) return null; // Deadline has passed.
-
-    const diffTime = deadlineUTC.getTime() - todayUTC.getTime();
-    
-    // Calculate days by dividing the millisecond difference. Add 1 for inclusive range.
-    const remainingDays = (diffTime / (1000 * 60 * 60 * 24)) + 1;
+    const remainingDays = getDaysRemaining(deadline);
 
     if (remainingDays <= 0) return null;
 

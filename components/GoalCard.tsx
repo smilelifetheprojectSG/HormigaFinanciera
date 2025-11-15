@@ -8,6 +8,27 @@ interface GoalCardProps {
   onSetGoal: () => void;
 }
 
+// Helper function for robust date calculation
+const getDaysRemaining = (deadline: string): number => {
+    // Parse deadline string to UTC date at midnight
+    const [year, month, day] = deadline.split('-').map(Number);
+    const deadlineUTC = new Date(Date.UTC(year, month - 1, day));
+
+    // Get today's date as UTC at midnight
+    const today = new Date();
+    const todayUTC = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
+    
+    if (deadlineUTC < todayUTC) return 0;
+
+    // Calculate day number since epoch for both dates
+    const msPerDay = 1000 * 60 * 60 * 24;
+    const deadlineDayNum = Math.floor(deadlineUTC.getTime() / msPerDay);
+    const todayDayNum = Math.floor(todayUTC.getTime() / msPerDay);
+
+    // Add 1 for an inclusive count
+    return deadlineDayNum - todayDayNum + 1;
+};
+
 export const GoalCard: React.FC<GoalCardProps> = ({ savings, goal, onSetGoal }) => {
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(value).replace(/\s/g, '\u2009');
@@ -32,29 +53,22 @@ export const GoalCard: React.FC<GoalCardProps> = ({ savings, goal, onSetGoal }) 
         return { dailyTarget: null, todaySavings: currentTodaySavings, dailyProgress: 0, deadlineText: null };
     }
 
-    // --- Robust UTC-based Date Handling ---
-    const [year, month, day] = goal.deadline.split('-').map(Number);
-    const deadlineUTC = new Date(Date.UTC(year, month - 1, day));
-
-    const todayUTC = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
-    
-    const diffTime = deadlineUTC.getTime() - todayUTC.getTime();
-    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+    const remainingDaysForText = getDaysRemaining(goal.deadline) - 1; // For "X days remaining" text
     
     let deadlineStr: string;
-    if (diffDays < 0) deadlineStr = 'Plazo vencido';
-    else if (diffDays === 0) deadlineStr = '¡Hoy es el último día!';
-    else deadlineStr = `${diffDays} día${diffDays !== 1 ? 's' : ''} restante${diffDays !== 1 ? 's' : ''}`;
+    if (remainingDaysForText < 0) deadlineStr = 'Plazo vencido';
+    else if (remainingDaysForText === 0) deadlineStr = '¡Hoy es el último día!';
+    else deadlineStr = `${remainingDaysForText} día${remainingDaysForText !== 1 ? 's' : ''} restante${remainingDaysForText !== 1 ? 's' : ''}`;
     
     const remainingAmount = goal.target - totalSaved;
     let currentDailyTarget: number | null = null;
     let currentDailyProgress = 0;
 
-    if (remainingAmount > 0 && deadlineUTC >= todayUTC) {
-      const remainingDays = diffDays + 1;
+    if (remainingAmount > 0) {
+      const remainingDaysForCalc = getDaysRemaining(goal.deadline);
       
-      if (remainingDays > 0) {
-        currentDailyTarget = remainingAmount / remainingDays;
+      if (remainingDaysForCalc > 0) {
+        currentDailyTarget = remainingAmount / remainingDaysForCalc;
         currentDailyProgress = currentDailyTarget > 0 ? (currentTodaySavings / currentDailyTarget) * 100 : 0;
       }
     }
