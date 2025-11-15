@@ -12,5 +12,5 @@ export interface SavingEntry {
 export interface SavingsGoal {
   target: number;
   description: string;
-  deadline?: string; // ISO string format
+  dailyAmount: number; // Cantidad mínima de ahorro diario
 }

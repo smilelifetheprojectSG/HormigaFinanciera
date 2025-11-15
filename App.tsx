@@ -63,19 +63,16 @@ function AppContent() {
         checkAndNotify('goal_80', goalProgress >= 80 && goalProgress < 90, { title: '¡Estás cerca!', message: 'Has superado el 80% de tu meta.', type: 'info' });
     }
 
-    // Deadline reminders
-    if (goal.deadline) {
-        const deadlineDate = new Date(goal.deadline);
-        deadlineDate.setUTCHours(0,0,0,0);
-        const todayDate = new Date();
-        todayDate.setHours(0,0,0,0);
-        const diffTime = deadlineDate.getTime() - todayDate.getTime();
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        
-        if (diffDays >= 0 && goalProgress < 100) {
-            checkAndNotify('deadline_1', diffDays <= 1, { title: '¡Último día!', message: `Tu meta "${goal.description}" vence pronto.`, type: 'warning' });
-            checkAndNotify('deadline_7', diffDays > 1 && diffDays <= 7, { title: 'Una semana restante', message: `Quedan 7 días o menos para tu meta.`, type: 'warning' });
-        }
+    // Deadline reminders (calculated dynamically)
+    const remainingAmount = goal.target - totalSaved;
+    let diffDays = -1;
+    if (remainingAmount > 0 && goal.dailyAmount > 0) {
+        diffDays = Math.ceil(remainingAmount / goal.dailyAmount);
+    }
+    
+    if (diffDays >= 0 && goalProgress < 100) {
+        checkAndNotify('deadline_1', diffDays <= 1, { title: '¡Último día!', message: `Tu meta "${goal.description}" vence pronto.`, type: 'warning' });
+        checkAndNotify('deadline_7', diffDays > 1 && diffDays <= 7, { title: 'Una semana restante', message: `Quedan 7 días o menos para tu meta.`, type: 'warning' });
     }
   }, [savings, goal, addNotification, notifiedMilestones, setNotifiedMilestones, totalSaved]);
 

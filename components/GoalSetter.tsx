@@ -5,38 +5,16 @@ import { XMarkIcon } from './icons/XMarkIcon';
 interface GoalSetterProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (goal: SavingsGoal) => void;
+  onSave: (goal: Omit<SavingsGoal, 'target'> & { target: number }) => void;
   onDelete: () => void;
   currentGoal?: SavingsGoal | null;
   totalSaved: number;
 }
 
-// Helper function for robust date calculation
-const getDaysRemaining = (deadline: string): number => {
-    // Parse deadline string to UTC date at midnight
-    const [year, month, day] = deadline.split('-').map(Number);
-    const deadlineUTC = new Date(Date.UTC(year, month - 1, day));
-
-    // Get today's date as UTC at midnight
-    const today = new Date();
-    const todayUTC = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
-    
-    if (deadlineUTC < todayUTC) return 0;
-
-    // Calculate day number since epoch for both dates
-    const msPerDay = 1000 * 60 * 60 * 24;
-    const deadlineDayNum = Math.floor(deadlineUTC.getTime() / msPerDay);
-    const todayDayNum = Math.floor(todayUTC.getTime() / msPerDay);
-
-    // Add 1 for an inclusive count
-    return deadlineDayNum - todayDayNum + 1;
-};
-
-
 export const GoalSetter: React.FC<GoalSetterProps> = ({ isOpen, onClose, onSave, onDelete, currentGoal, totalSaved }) => {
   const [target, setTarget] = useState('');
   const [description, setDescription] = useState('');
-  const [deadline, setDeadline] = useState('');
+  const [dailyAmount, setDailyAmount] = useState('');
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -44,46 +22,50 @@ export const GoalSetter: React.FC<GoalSetterProps> = ({ isOpen, onClose, onSave,
         if (currentGoal) {
           setTarget(currentGoal.target.toString());
           setDescription(currentGoal.description);
-          setDeadline(currentGoal.deadline ? new Date(currentGoal.deadline).toISOString().split('T')[0] : '');
+          setDailyAmount(currentGoal.dailyAmount.toString());
         } else {
           setTarget('');
           setDescription('');
-          setDeadline('');
+          setDailyAmount('');
         }
         setError('');
     }
   }, [currentGoal, isOpen]);
   
-  const dailyTarget = useMemo(() => {
+  const estimatedDeadline = useMemo(() => {
     const numericTarget = parseFloat(target);
-    if (!deadline || isNaN(numericTarget) || numericTarget <= 0) {
+    const numericDailyAmount = parseFloat(dailyAmount);
+    if (isNaN(numericTarget) || numericTarget <= 0 || isNaN(numericDailyAmount) || numericDailyAmount <= 0) {
       return null;
     }
-
-    // Treat negative savings as 0 for this calculation to make it more intuitive.
-    // The goal is to reach the target, not necessarily clear the debt within the same timeframe.
     const remainingAmount = numericTarget - Math.max(0, totalSaved);
+    if (remainingAmount <= 0) return "¡Ya has alcanzado la meta!";
 
-    if (remainingAmount <= 0) return null;
-
-    const remainingDays = getDaysRemaining(deadline);
-
-    if (remainingDays <= 0) return null;
-
-    return remainingAmount / remainingDays;
-  }, [target, deadline, totalSaved]);
+    const daysNeeded = Math.ceil(remainingAmount / numericDailyAmount);
+    const deadline = new Date();
+    deadline.setDate(deadline.getDate() + daysNeeded);
+    
+    return deadline.toLocaleDateString('es-ES', {
+        year: 'numeric', month: 'long', day: 'numeric'
+    });
+  }, [target, dailyAmount, totalSaved]);
 
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const numericTarget = parseFloat(target);
+    const numericDailyAmount = parseFloat(dailyAmount);
 
     if (!description.trim()) {
         setError('La descripción es obligatoria.');
         return;
     }
     if (isNaN(numericTarget) || numericTarget <= 0) {
-      setError('La meta debe ser un número positivo.');
+      setError('El monto objetivo debe ser un número positivo.');
+      return;
+    }
+    if (isNaN(numericDailyAmount) || numericDailyAmount <= 0) {
+      setError('La cantidad mínima diaria debe ser un número positivo.');
       return;
     }
     
@@ -91,7 +73,7 @@ export const GoalSetter: React.FC<GoalSetterProps> = ({ isOpen, onClose, onSave,
     onSave({ 
         target: numericTarget, 
         description: description.trim(),
-        deadline: deadline || undefined 
+        dailyAmount: numericDailyAmount
     });
   };
 
@@ -129,22 +111,24 @@ export const GoalSetter: React.FC<GoalSetterProps> = ({ isOpen, onClose, onSave,
             />
           </div>
           <div className="mb-4">
-            <label htmlFor="deadline" className="block text-sm font-medium text-text-secondary mb-1">Fecha Límite (Opcional)</label>
+            <label htmlFor="dailyAmount" className="block text-sm font-medium text-text-secondary mb-1">Cantidad Mínima Diaria (€)</label>
             <input
-              id="deadline"
-              type="date"
-              value={deadline}
-              onChange={(e) => setDeadline(e.target.value)}
+              id="dailyAmount"
+              type="number"
+              step="0.01"
+              value={dailyAmount}
+              onChange={(e) => setDailyAmount(e.target.value)}
               className="w-full px-3 py-2 border border-border bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-primary-light focus:border-primary-light"
+              placeholder="Ej. 10.00"
             />
           </div>
 
-          {dailyTarget !== null && (
+          {estimatedDeadline && (
             <div className="my-4 p-3 bg-subtle-button-bg rounded-lg text-center animate-fade-in-up">
               <p className="text-sm text-subtle-button-text">
-                Ingreso mínimo diario recomendado:
+                Fecha de finalización estimada:
                 <span className="block font-bold text-lg text-primary-dark mt-1">
-                  {new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(dailyTarget)}
+                  {estimatedDeadline}
                 </span>
               </p>
             </div>
