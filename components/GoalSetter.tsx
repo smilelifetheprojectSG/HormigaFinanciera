@@ -60,7 +60,10 @@ export const GoalSetter: React.FC<GoalSetterProps> = ({ isOpen, onClose, onSave,
       return null;
     }
 
-    const remainingAmount = numericTarget - totalSaved;
+    // Treat negative savings as 0 for this calculation to make it more intuitive.
+    // The goal is to reach the target, not necessarily clear the debt within the same timeframe.
+    const remainingAmount = numericTarget - Math.max(0, totalSaved);
+
     if (remainingAmount <= 0) return null;
 
     const remainingDays = getDaysRemaining(deadline);

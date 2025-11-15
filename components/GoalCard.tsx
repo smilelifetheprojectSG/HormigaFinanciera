@@ -60,7 +60,8 @@ export const GoalCard: React.FC<GoalCardProps> = ({ savings, goal, onSetGoal }) 
     else if (remainingDaysForText === 0) deadlineStr = '¡Hoy es el último día!';
     else deadlineStr = `${remainingDaysForText} día${remainingDaysForText !== 1 ? 's' : ''} restante${remainingDaysForText !== 1 ? 's' : ''}`;
     
-    const remainingAmount = goal.target - totalSaved;
+    // Treat negative savings as 0 for this calculation to make it more intuitive.
+    const remainingAmount = goal.target - Math.max(0, totalSaved);
     let currentDailyTarget: number | null = null;
     let currentDailyProgress = 0;
 
