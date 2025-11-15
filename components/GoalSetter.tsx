@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { SavingsGoal } from '../types';
 import { XMarkIcon } from './icons/XMarkIcon';
 
@@ -8,9 +8,10 @@ interface GoalSetterProps {
   onSave: (goal: SavingsGoal) => void;
   onDelete: () => void;
   currentGoal?: SavingsGoal | null;
+  totalSaved: number;
 }
 
-export const GoalSetter: React.FC<GoalSetterProps> = ({ isOpen, onClose, onSave, onDelete, currentGoal }) => {
+export const GoalSetter: React.FC<GoalSetterProps> = ({ isOpen, onClose, onSave, onDelete, currentGoal, totalSaved }) => {
   const [target, setTarget] = useState('');
   const [description, setDescription] = useState('');
   const [deadline, setDeadline] = useState('');
@@ -30,6 +31,35 @@ export const GoalSetter: React.FC<GoalSetterProps> = ({ isOpen, onClose, onSave,
         setError('');
     }
   }, [currentGoal, isOpen]);
+  
+  const dailyTarget = useMemo(() => {
+    const numericTarget = parseFloat(target);
+    if (!deadline || isNaN(numericTarget) || numericTarget <= 0) {
+      return null;
+    }
+
+    // FIX: Parse deadline string as local date to avoid timezone issues.
+    const [year, month, day] = deadline.split('-').map(Number);
+    // The deadline is at the very end of the selected day, in local time.
+    const deadlineDate = new Date(year, month - 1, day, 23, 59, 59, 999);
+
+    // Today is at the very start of the current day, in local time.
+    const todayDate = new Date();
+    todayDate.setHours(0, 0, 0, 0);
+
+    if (deadlineDate < todayDate) return null; // Deadline has passed.
+
+    const diffTime = deadlineDate.getTime() - todayDate.getTime();
+    const remainingDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (remainingDays <= 0) return null;
+
+    const remainingAmount = numericTarget - totalSaved;
+    if (remainingAmount <= 0) return null; // Goal already reached
+
+    return remainingAmount / remainingDays;
+  }, [target, deadline, totalSaved]);
+
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -95,6 +125,18 @@ export const GoalSetter: React.FC<GoalSetterProps> = ({ isOpen, onClose, onSave,
               className="w-full px-3 py-2 border border-border bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-primary-light focus:border-primary-light"
             />
           </div>
+
+          {dailyTarget !== null && (
+            <div className="my-4 p-3 bg-subtle-button-bg rounded-lg text-center animate-fade-in-up">
+              <p className="text-sm text-subtle-button-text">
+                Ingreso mínimo diario recomendado:
+                <span className="block font-bold text-lg text-primary-dark mt-1">
+                  {new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(dailyTarget)}
+                </span>
+              </p>
+            </div>
+          )}
+
           {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
           <div className="flex justify-between items-center pt-2">
              <div>

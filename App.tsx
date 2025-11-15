@@ -40,10 +40,11 @@ function AppContent() {
   const { concepts, addConcept, updateConcept, deleteConcept, reorderConcepts } = useConceptManager();
 
 
+  const totalSaved = savings.reduce((sum, entry) => sum + entry.amount, 0);
+
   useEffect(() => {
     if (!goal) return;
 
-    const totalSaved = savings.reduce((sum, entry) => sum + entry.amount, 0);
     const goalProgress = goal.target > 0 ? (totalSaved / goal.target) * 100 : 0;
 
     const checkAndNotify = (key: string, condition: boolean, notification: { title: string, message: string, type: 'success' | 'info' | 'warning' | 'error' }) => {
@@ -76,7 +77,7 @@ function AppContent() {
             checkAndNotify('deadline_7', diffDays > 1 && diffDays <= 7, { title: 'Una semana restante', message: `Quedan 7 días o menos para tu meta.`, type: 'warning' });
         }
     }
-  }, [savings, goal, addNotification, notifiedMilestones, setNotifiedMilestones]);
+  }, [savings, goal, addNotification, notifiedMilestones, setNotifiedMilestones, totalSaved]);
 
   const handleDayClick = useCallback((date: string) => {
     setSelectedDate(date);
@@ -210,6 +211,7 @@ function AppContent() {
         onSave={handleSaveGoal}
         onDelete={requestDeleteGoal}
         currentGoal={goal}
+        totalSaved={totalSaved}
       />
       <ConceptManager
         isOpen={isConceptManagerOpen}
