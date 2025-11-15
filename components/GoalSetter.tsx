@@ -38,24 +38,25 @@ export const GoalSetter: React.FC<GoalSetterProps> = ({ isOpen, onClose, onSave,
       return null;
     }
 
-    // FIX: Parse deadline string as local date to avoid timezone issues.
+    const remainingAmount = numericTarget - totalSaved;
+    if (remainingAmount <= 0) return null;
+
+    // Parse deadline string as local date at midnight.
     const [year, month, day] = deadline.split('-').map(Number);
-    // The deadline is at the very end of the selected day, in local time.
-    const deadlineDate = new Date(year, month - 1, day, 23, 59, 59, 999);
+    const deadlineDate = new Date(year, month - 1, day);
 
-    // Today is at the very start of the current day, in local time.
-    const todayDate = new Date();
-    todayDate.setHours(0, 0, 0, 0);
+    // Get today's date at local midnight.
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
-    if (deadlineDate < todayDate) return null; // Deadline has passed.
+    if (deadlineDate < today) return null; // Deadline has passed.
 
-    const diffTime = deadlineDate.getTime() - todayDate.getTime();
-    const remainingDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const diffTime = deadlineDate.getTime() - today.getTime();
+    
+    // Calculate the number of full days between today and the deadline, then add 1 to make it inclusive.
+    const remainingDays = Math.round(diffTime / (1000 * 60 * 60 * 24)) + 1;
     
     if (remainingDays <= 0) return null;
-
-    const remainingAmount = numericTarget - totalSaved;
-    if (remainingAmount <= 0) return null; // Goal already reached
 
     return remainingAmount / remainingDays;
   }, [target, deadline, totalSaved]);

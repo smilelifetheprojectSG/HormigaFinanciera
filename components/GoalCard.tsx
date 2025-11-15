@@ -34,20 +34,20 @@ export const GoalCard: React.FC<GoalCardProps> = ({ savings, goal, onSetGoal }) 
         return { dailyTarget: null, todaySavings: currentTodaySavings, dailyProgress: 0, deadlineText: null };
     }
 
-    // --- Consistent Date Handling ---
-    // Parse deadline string as local date to avoid timezone issues.
+    // --- Robust Date Handling ---
     const [year, month, day] = goal.deadline.split('-').map(Number);
-    
-    // For deadline text (days remaining) - compare start of days
-    const deadlineStartOfDay = new Date(year, month - 1, day);
+    const deadlineDate = new Date(year, month - 1, day); // At 00:00:00 local time
+
     const todayStartOfDay = new Date();
     todayStartOfDay.setHours(0, 0, 0, 0);
-    const diffTimeText = deadlineStartOfDay.getTime() - todayStartOfDay.getTime();
+    
+    // For deadline text (days remaining)
+    const diffTimeText = deadlineDate.getTime() - todayStartOfDay.getTime();
     const diffDays = Math.round(diffTimeText / (1000 * 60 * 60 * 24));
     
     let deadlineStr: string;
     if (diffDays < 0) deadlineStr = 'Plazo vencido';
-    else if (diffDays === 0) deadlineStr = '¡Último día!';
+    else if (diffDays === 0) deadlineStr = '¡Hoy es el último día!';
     else deadlineStr = `${diffDays} día${diffDays !== 1 ? 's' : ''} restante${diffDays !== 1 ? 's' : ''}`;
     
     // For daily target calculation
@@ -55,19 +55,14 @@ export const GoalCard: React.FC<GoalCardProps> = ({ savings, goal, onSetGoal }) 
     let currentDailyTarget: number | null = null;
     let currentDailyProgress = 0;
 
-    if (remainingAmount > 0) {
-        // The deadline is at the very end of the selected day, in local time.
-        const deadlineEndOfDay = new Date(year, month - 1, day, 23, 59, 59, 999);
-        
-        if (deadlineEndOfDay >= todayStartOfDay) {
-            const diffTimeTarget = deadlineEndOfDay.getTime() - todayStartOfDay.getTime();
-            const remainingDays = Math.ceil(diffTimeTarget / (1000 * 60 * 60 * 24));
-            
-            if (remainingDays > 0) {
-                currentDailyTarget = remainingAmount / remainingDays;
-                currentDailyProgress = currentDailyTarget > 0 ? (currentTodaySavings / currentDailyTarget) * 100 : 0;
-            }
-        }
+    if (remainingAmount > 0 && deadlineDate >= todayStartOfDay) {
+      // Calculate inclusive number of days from today until the deadline
+      const remainingDays = Math.round(diffTimeText / (1000 * 60 * 60 * 24)) + 1;
+      
+      if (remainingDays > 0) {
+        currentDailyTarget = remainingAmount / remainingDays;
+        currentDailyProgress = currentDailyTarget > 0 ? (currentTodaySavings / currentDailyTarget) * 100 : 0;
+      }
     }
 
     return { 
