@@ -88,8 +88,8 @@ export const GoalCard: React.FC<GoalCardProps> = ({ savings, goal, onSetGoal }) 
               </>
           ) : (
               <div className="mt-4 text-center">
-                  <p className="text-text-secondary">
-                    No has establecido una meta.{" "}
+                  <p className="text-text-secondary text-sm">
+                    No has establecido una meta ➜{" "}
                     <button onClick={onSetGoal} className="font-semibold text-primary-light hover:text-primary transition-colors focus:outline-none focus:underline">
                       Establecer meta
                     </button>

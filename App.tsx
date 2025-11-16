@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { Header } from './components/Header';
@@ -13,6 +14,8 @@ import { ConceptManager } from './components/ConceptManager';
 import { ConfirmModal } from './components/ConfirmModal';
 import type { SavingEntry, SavingsGoal } from './types';
 import { GoalCard } from './components/GoalCard';
+import { TopApps } from './components/TopApps';
+import { PeriodComparer } from './components/PeriodComparer';
 import { Confetti } from './components/Confetti';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { Welcome } from './components/Welcome';
@@ -206,6 +209,8 @@ function AppContent() {
             goal={goal}
             onSetGoal={() => setIsGoalSetterOpen(true)}
         />
+        <TopApps savings={savings} />
+        <PeriodComparer savings={savings} />
         <DataExporter savings={savings} onImportRequest={handleImportRequest}/>
       </main>
       

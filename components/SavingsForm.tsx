@@ -39,7 +39,7 @@ export const SavingsForm: React.FC<SavingsFormProps> = ({ isOpen, onClose, onSav
   const [customConcept, setCustomConcept] = useState('');
   const [note, setNote] = useState('');
   const [currency, setCurrency] = useState<'EUR' | 'USD'>('EUR');
-  const [exchangeRate, setExchangeRate] = useState('0.92');
+  const [exchangeRate, setExchangeRate] = useState('0.86');
   const [error, setError] = useState('');
   const [entryToEdit, setEntryToEdit] = useState<SavingEntry | null>(null);
   const [isListCollapsed, setListCollapsed] = useState(false);
@@ -70,7 +70,7 @@ export const SavingsForm: React.FC<SavingsFormProps> = ({ isOpen, onClose, onSav
     setError('');
     setEntryToEdit(null);
     setCurrency('EUR');
-    setExchangeRate('0.92');
+    setExchangeRate('0.86');
     setTransactionType('income');
     setHasCommission(false);
     setCommissionAmount('');
@@ -611,7 +611,7 @@ export const SavingsForm: React.FC<SavingsFormProps> = ({ isOpen, onClose, onSav
                               value={exchangeRate}
                               onChange={(e) => setExchangeRate(e.target.value)}
                               className="w-full px-3 py-2 border border-border bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-primary-light focus:border-primary-light"
-                              placeholder="Ej. 0.92"
+                              placeholder="Ej. 0.86"
                             />
                         </div>
                     )}

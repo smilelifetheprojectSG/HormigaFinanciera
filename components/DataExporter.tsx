@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react';
 import { SavingEntry } from '../types';
 import { DocumentArrowDownIcon } from './icons/DocumentArrowDownIcon';
 import { DocumentArrowUpIcon } from './icons/DocumentArrowUpIcon';
+import { InformationCircleIcon } from './icons/InformationCircleIcon';
 
 
 interface DataExporterProps {
@@ -37,6 +38,7 @@ const parseCsvRow = (row: string): string[] => {
 export const DataExporter: React.FC<DataExporterProps> = ({ savings, onImportRequest }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [importError, setImportError] = useState('');
+  const [isExpanded, setIsExpanded] = useState(false);
 
   const exportToCSV = () => {
     if (savings.length === 0) {
@@ -187,46 +189,61 @@ export const DataExporter: React.FC<DataExporterProps> = ({ savings, onImportReq
 
   return (
     <div className="animate-fade-in-up">
-      <h2 className="text-xl font-bold text-primary-dark mb-4">Opciones Adicionales</h2>
-      <div className="bg-surface p-6 rounded-xl shadow-lg flex flex-col md:flex-row items-center">
-        <div className="flex-grow mb-4 md:mb-0 md:mr-6">
-            <h3 className="text-md font-medium text-text-primary">Exportar Datos a CSV</h3>
-            <p className="text-sm text-text-secondary mt-1">
-            Guarda una copia de seguridad de todos tus movimientos en un archivo CSV, compatible con Excel y Google Sheets.
-            </p>
+        <div className="flex items-center justify-between">
+            <h2 className="text-xl font-bold text-primary-dark">Opciones Adicionales</h2>
+            <button
+            onClick={() => setIsExpanded(prev => !prev)}
+            className="p-1 rounded-full text-text-secondary hover:text-primary-dark hover:bg-subtle-button-hover-bg transition-colors"
+            aria-label={isExpanded ? "Ocultar opciones" : "Mostrar opciones"}
+            aria-expanded={isExpanded}
+            >
+            <InformationCircleIcon className="w-6 h-6" />
+            </button>
         </div>
-        <button
-          onClick={exportToCSV}
-          className="px-6 py-3 bg-subtle-button-bg text-subtle-button-text font-semibold rounded-lg shadow-sm hover:shadow-md hover:bg-subtle-button-hover-bg transition-all flex items-center justify-center flex-shrink-0"
-        >
-          <DocumentArrowDownIcon className="w-5 h-5 mr-2" />
-          Descargar Archivo CSV
-        </button>
-      </div>
 
-      <div className="bg-surface p-6 rounded-xl shadow-lg mt-6 flex flex-col md:flex-row items-center">
-        <div className="flex-grow mb-4 md:mb-0 md:mr-6">
-            <h3 className="text-md font-medium text-text-primary">Importar Datos Hormiga</h3>
-            <p className="text-sm text-text-secondary mt-1">
-                Carga tus movimientos desde un archivo CSV. Esto reemplazará todos los datos actuales en este dispositivo.
-            </p>
-             {importError && <p className="text-red-500 text-sm mt-2 bg-red-50 p-3 rounded-lg">{importError}</p>}
-        </div>
-        <input
-            type="file"
-            ref={fileInputRef}
-            onChange={handleFileSelect}
-            accept=".csv,text/csv"
-            className="hidden"
-        />
-        <button
-          onClick={() => fileInputRef.current?.click()}
-          className="px-6 py-3 bg-subtle-button-bg text-subtle-button-text font-semibold rounded-lg shadow-sm hover:shadow-md hover:bg-subtle-button-hover-bg transition-all flex items-center justify-center flex-shrink-0"
-        >
-          <DocumentArrowUpIcon className="w-5 h-5 mr-2" />
-          Seleccionar Archivo
-        </button>
-      </div>
+        {isExpanded && (
+            <div className="space-y-6 animate-fade-in-up mt-4">
+                <div className="bg-surface p-6 rounded-xl shadow-lg flex flex-col md:flex-row items-center">
+                    <div className="flex-grow mb-4 md:mb-0 md:mr-6">
+                        <h3 className="text-md font-medium text-text-primary">Exportar Datos a CSV</h3>
+                        <p className="text-sm text-text-secondary mt-1">
+                        Guarda una copia de seguridad de todos tus movimientos en un archivo CSV, compatible con Excel y Google Sheets.
+                        </p>
+                    </div>
+                    <button
+                    onClick={exportToCSV}
+                    className="px-6 py-3 bg-subtle-button-bg text-subtle-button-text font-semibold rounded-lg shadow-sm hover:shadow-md hover:bg-subtle-button-hover-bg transition-all flex items-center justify-center flex-shrink-0"
+                    >
+                    <DocumentArrowDownIcon className="w-5 h-5 mr-2" />
+                    Descargar Archivo CSV
+                    </button>
+                </div>
+
+                <div className="bg-surface p-6 rounded-xl shadow-lg flex flex-col md:flex-row items-center">
+                    <div className="flex-grow mb-4 md:mb-0 md:mr-6">
+                        <h3 className="text-md font-medium text-text-primary">Importar Datos Hormiga</h3>
+                        <p className="text-sm text-text-secondary mt-1">
+                            Carga tus movimientos desde un archivo CSV. Esto reemplazará todos los datos actuales en este dispositivo.
+                        </p>
+                        {importError && <p className="text-red-500 text-sm mt-2 bg-red-50 p-3 rounded-lg">{importError}</p>}
+                    </div>
+                    <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleFileSelect}
+                        accept=".csv,text/csv"
+                        className="hidden"
+                    />
+                    <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="px-6 py-3 bg-subtle-button-bg text-subtle-button-text font-semibold rounded-lg shadow-sm hover:shadow-md hover:bg-subtle-button-hover-bg transition-all flex items-center justify-center flex-shrink-0"
+                    >
+                    <DocumentArrowUpIcon className="w-5 h-5 mr-2" />
+                    Seleccionar Archivo
+                    </button>
+                </div>
+            </div>
+        )}
     </div>
   );
 };
