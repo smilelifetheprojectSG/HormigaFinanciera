@@ -34,6 +34,8 @@ export const SavingsForm: React.FC<SavingsFormProps> = ({ isOpen, onClose, onSav
   const [amount, setAmount] = useState('');
   const [concept, setConcept] = useState('');
   const [destinationConcept, setDestinationConcept] = useState('');
+  const [transferSource, setTransferSource] = useState('');
+  const [transferDestination, setTransferDestination] = useState('');
   const [customConcept, setCustomConcept] = useState('');
   const [note, setNote] = useState('');
   const [currency, setCurrency] = useState<'EUR' | 'USD'>('EUR');
@@ -41,7 +43,7 @@ export const SavingsForm: React.FC<SavingsFormProps> = ({ isOpen, onClose, onSav
   const [error, setError] = useState('');
   const [entryToEdit, setEntryToEdit] = useState<SavingEntry | null>(null);
   const [isListCollapsed, setListCollapsed] = useState(false);
-  const [transactionType, setTransactionType] = useState<'income' | 'expense' | 'withdrawal'>('income');
+  const [transactionType, setTransactionType] = useState<'income' | 'expense' | 'withdrawal' | 'transfer'>('income');
   const [hasCommission, setHasCommission] = useState(false);
   const [commissionAmount, setCommissionAmount] = useState('');
 
@@ -62,6 +64,8 @@ export const SavingsForm: React.FC<SavingsFormProps> = ({ isOpen, onClose, onSav
     setConcept('');
     setCustomConcept('');
     setDestinationConcept('');
+    setTransferSource('');
+    setTransferDestination('');
     setNote('');
     setError('');
     setEntryToEdit(null);
@@ -136,6 +140,25 @@ export const SavingsForm: React.FC<SavingsFormProps> = ({ isOpen, onClose, onSav
         finalExchangeRate = numericExchangeRate;
     }
 
+    let numericCommissionAmount = 0;
+    let finalCommissionInEur = 0;
+
+    if (hasCommission) {
+        if (!commissionAmount) {
+            setError('La cantidad de la comisión es obligatoria.');
+            return;
+        }
+        numericCommissionAmount = parseFloat(commissionAmount.replace(',', '.'));
+        if (isNaN(numericCommissionAmount) || numericCommissionAmount <= 0) {
+            setError('La comisión debe ser un número positivo.');
+            return;
+        }
+        finalCommissionInEur = numericCommissionAmount;
+        if (currency === 'USD' && finalExchangeRate) {
+            finalCommissionInEur = numericCommissionAmount * finalExchangeRate;
+        }
+    }
+
     if (transactionType === 'withdrawal') {
         if (!concept) {
             setError('Debes seleccionar un origen para el retiro.');
@@ -148,25 +171,6 @@ export const SavingsForm: React.FC<SavingsFormProps> = ({ isOpen, onClose, onSav
         if (concept === destinationConcept) {
             setError('El origen y el destino no pueden ser iguales.');
             return;
-        }
-
-        let numericCommissionAmount = 0;
-        let finalCommissionInEur = 0;
-
-        if (hasCommission) {
-            if (!commissionAmount) {
-                setError('La cantidad de la comisión es obligatoria.');
-                return;
-            }
-            numericCommissionAmount = parseFloat(commissionAmount.replace(',', '.'));
-            if (isNaN(numericCommissionAmount) || numericCommissionAmount <= 0) {
-                setError('La comisión debe ser un número positivo.');
-                return;
-            }
-            finalCommissionInEur = numericCommissionAmount;
-            if (currency === 'USD' && finalExchangeRate) {
-                finalCommissionInEur = numericCommissionAmount * finalExchangeRate;
-            }
         }
 
         const noteText = note.trim();
@@ -207,6 +211,60 @@ export const SavingsForm: React.FC<SavingsFormProps> = ({ isOpen, onClose, onSav
             date,
         });
 
+        onSave(entriesToSave);
+
+    } else if (transactionType === 'transfer') {
+        if (!transferSource) {
+            setError('Debes seleccionar una cuenta de origen.');
+            return;
+        }
+        if (!transferDestination) {
+            setError('Debes seleccionar una cuenta de destino.');
+            return;
+        }
+        if (transferSource === transferDestination) {
+            setError('El origen y el destino no pueden ser iguales.');
+            return;
+        }
+
+        const noteText = note.trim();
+        const entriesToSave: Omit<SavingEntry, 'id'>[] = [];
+        
+        // 1. Gasto de la transferencia (desde el origen)
+        entriesToSave.push({
+            amount: -finalAmountInEur,
+            originalAmount: -numericAmount,
+            currency,
+            exchangeRate: finalExchangeRate,
+            description: transferSource,
+            note: `Transferencia a ${transferDestination}${noteText ? ` (${noteText})` : ''}`,
+            date,
+        });
+        
+        // 2. Gasto de la comisión (desde el origen)
+        if (hasCommission && finalCommissionInEur > 0) {
+            entriesToSave.push({
+                amount: -finalCommissionInEur,
+                originalAmount: -numericCommissionAmount,
+                currency,
+                exchangeRate: finalExchangeRate,
+                description: transferSource,
+                note: `Comisión por transferencia a ${transferDestination}`,
+                date,
+            });
+        }
+
+        // 3. Ingreso de la transferencia (hacia el destino)
+        entriesToSave.push({
+            amount: finalAmountInEur,
+            originalAmount: numericAmount,
+            currency,
+            exchangeRate: finalExchangeRate,
+            description: transferDestination,
+            note: `Transferencia desde ${transferSource}${noteText ? ` (${noteText})` : ''}`,
+            date,
+        });
+        
         onSave(entriesToSave);
 
     } else { // Income or Expense
@@ -264,10 +322,12 @@ export const SavingsForm: React.FC<SavingsFormProps> = ({ isOpen, onClose, onSav
   const submitButtonText = entryToEdit ? 'Guardar Cambios' : 
     transactionType === 'income' ? 'Añadir Ingreso' :
     transactionType === 'expense' ? 'Restar Gasto' :
-    'Realizar Retiro';
+    transactionType === 'withdrawal' ? 'Realizar Retiro' :
+    'Realizar Transferencia';
     
   const submitButtonClass = transactionType === 'expense' ? 'bg-red-600 hover:bg-red-700' :
     transactionType === 'withdrawal' ? 'bg-amber-500 hover:bg-amber-600' :
+    transactionType === 'transfer' ? 'bg-blue-600 hover:bg-blue-700' :
     'bg-primary hover:bg-primary-dark';
 
   return (
@@ -339,7 +399,7 @@ export const SavingsForm: React.FC<SavingsFormProps> = ({ isOpen, onClose, onSav
                 <form onSubmit={handleSubmit} noValidate className="space-y-4">
                      <div>
                         <label className="block text-sm font-medium text-text-secondary mb-1">Tipo de Movimiento</label>
-                        <div className="flex items-center space-x-2 bg-background border border-border rounded-md p-1 w-auto">
+                        <div className="flex items-center flex-wrap gap-2 bg-background border border-border rounded-md p-1 w-auto">
                             <button type="button" onClick={() => setTransactionType('income')} className={`px-3 py-1 text-sm rounded-md transition-colors ${transactionType === 'income' ? 'bg-primary text-white shadow-sm' : 'text-text-secondary hover:bg-subtle-button-hover-bg'}`}>
                                 Ingreso
                             </button>
@@ -348,6 +408,9 @@ export const SavingsForm: React.FC<SavingsFormProps> = ({ isOpen, onClose, onSav
                             </button>
                             <button type="button" onClick={() => setTransactionType('withdrawal')} disabled={!!entryToEdit} className={`px-3 py-1 text-sm rounded-md transition-colors ${transactionType === 'withdrawal' ? 'bg-amber-500 text-white shadow-sm' : 'text-text-secondary hover:bg-subtle-button-hover-bg'} disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed`}>
                                 Retiro
+                            </button>
+                            <button type="button" onClick={() => setTransactionType('transfer')} disabled={!!entryToEdit} className={`px-3 py-1 text-sm rounded-md transition-colors ${transactionType === 'transfer' ? 'bg-blue-600 text-white shadow-sm' : 'text-text-secondary hover:bg-subtle-button-hover-bg'} disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed`}>
+                                Destino
                             </button>
                         </div>
                     </div>
@@ -408,6 +471,61 @@ export const SavingsForm: React.FC<SavingsFormProps> = ({ isOpen, onClose, onSav
                                         className="rounded border-border text-primary focus:ring-primary-light"
                                     />
                                     <span>Añadir comisión por retiro</span>
+                                </label>
+                                {hasCommission && (
+                                    <div className="animate-fade-in-up">
+                                        <label htmlFor="commission-amount" className="block text-sm font-medium text-text-secondary mb-1">Cantidad de la Comisión ({currency === 'EUR' ? '€' : '$'})</label>
+                                        <input
+                                          id="commission-amount"
+                                          type="text"
+                                          inputMode="decimal"
+                                          value={commissionAmount}
+                                          onChange={(e) => setCommissionAmount(e.target.value)}
+                                          className="w-full px-3 py-2 border border-border bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-primary-light focus:border-primary-light"
+                                          placeholder="0,00"
+                                        />
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    ) : transactionType === 'transfer' ? (
+                        <div className="animate-fade-in-up space-y-4">
+                            <div>
+                                <label htmlFor="transfer-source" className="block text-sm font-medium text-text-secondary mb-1">Desde (Origen)</label>
+                                <select
+                                    id="transfer-source"
+                                    value={transferSource}
+                                    onChange={(e) => setTransferSource(e.target.value)}
+                                    className="w-full px-3 py-2 border border-border bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-primary-light focus:border-primary-light"
+                                >
+                                    <option value="" disabled>Selecciona un origen...</option>
+                                    {destinationConcepts.map(c => <option key={c} value={c}>{c}</option>)}
+                                </select>
+                            </div>
+                            <div>
+                                <label htmlFor="transfer-destination" className="block text-sm font-medium text-text-secondary mb-1">Hacia (Destino)</label>
+                                <select
+                                    id="transfer-destination"
+                                    value={transferDestination}
+                                    onChange={(e) => setTransferDestination(e.target.value)}
+                                    className="w-full px-3 py-2 border border-border bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-primary-light focus:border-primary-light"
+                                >
+                                    <option value="" disabled>Selecciona un destino...</option>
+                                    {destinationConcepts.filter(c => c !== transferSource).map(c => <option key={c} value={c}>{c}</option>)}
+                                </select>
+                            </div>
+                            <div className="space-y-2">
+                                <label className="flex items-center space-x-2 text-sm text-text-secondary cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        checked={hasCommission}
+                                        onChange={(e) => {
+                                            setHasCommission(e.target.checked);
+                                            if (!e.target.checked) setCommissionAmount('');
+                                        }}
+                                        className="rounded border-border text-primary focus:ring-primary-light"
+                                    />
+                                    <span>Añadir comisión por transferencia</span>
                                 </label>
                                 {hasCommission && (
                                     <div className="animate-fade-in-up">
