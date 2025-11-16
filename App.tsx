@@ -16,6 +16,7 @@ import { GoalCard } from './components/GoalCard';
 import { Confetti } from './components/Confetti';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { Welcome } from './components/Welcome';
+import { DataExporter } from './components/DataExporter';
 
 
 function AppContent() {
@@ -190,6 +191,7 @@ function AppContent() {
             goal={goal}
             onSetGoal={() => setIsGoalSetterOpen(true)}
         />
+        <DataExporter savings={savings} />
       </main>
       
       <NotificationContainer notifications={notifications} onDismiss={dismissNotification} />
