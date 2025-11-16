@@ -2,6 +2,9 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { SavingEntry } from '../types';
 import { ChevronLeftIcon } from './icons/ChevronLeftIcon';
 import { ChevronRightIcon } from './icons/ChevronRightIcon';
+import { MagnifyingGlassIcon } from './icons/MagnifyingGlassIcon';
+import { BarsArrowUpIcon } from './icons/BarsArrowUpIcon';
+import { BarsArrowDownIcon } from './icons/BarsArrowDownIcon';
 
 interface SavingsListProps {
     savings: SavingEntry[];
@@ -120,13 +123,15 @@ const Calendar: React.FC<SavingsListProps> = ({ savings, selectedDate, onDayClic
 };
 
 const Balances: React.FC<{ savings: SavingEntry[] }> = ({ savings }) => {
+    const [searchTerm, setSearchTerm] = useState('');
+    const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
+
     const formatCurrency = (value: number) => {
         return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(value).replace(/\s/g, '\u2009');
     };
 
-    const balances = useMemo(() => {
+    const initialBalances = useMemo(() => {
         const balanceMap = new Map<string, number>();
-
         const excludedConcepts = new Set([
             'Saldo en efectivo',
             'Saldo en Revolut Mama',
@@ -144,26 +149,80 @@ const Balances: React.FC<{ savings: SavingEntry[] }> = ({ savings }) => {
         }
         
         return Array.from(balanceMap.entries())
-            .filter(([, balance]) => balance > 0)
-            .sort((a, b) => b[1] - a[1]);
-
+            .filter(([, balance]) => balance > 0);
     }, [savings]);
 
-    if (balances.length === 0) {
+    const displayedBalances = useMemo(() => {
+        let processedBalances = [...initialBalances];
+
+        if (searchTerm) {
+            processedBalances = processedBalances.filter(([concept]) => 
+                concept.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+        }
+
+        processedBalances.sort((a, b) => {
+            if (sortOrder === 'desc') {
+                return b[1] - a[1];
+            } else {
+                return a[1] - b[1];
+            }
+        });
+
+        return processedBalances;
+    }, [initialBalances, searchTerm, sortOrder]);
+
+    if (initialBalances.length === 0) {
         return null;
     }
 
     return (
         <div className="mt-6 animate-fade-in-up">
             <h3 className="text-lg font-semibold text-text-primary mb-3">Saldos en Apps</h3>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                {balances.map(([concept, balance]) => (
-                    <div key={concept} className="bg-surface p-3 rounded-lg shadow-md transition-transform hover:scale-105">
-                        <p className="text-sm text-text-secondary truncate font-medium" title={concept}>{concept}</p>
-                        <p className="text-xl font-bold text-primary-dark mt-1">{formatCurrency(balance)}</p>
-                    </div>
-                ))}
+            
+            <div className="flex flex-col sm:flex-row gap-3 mb-4">
+                <div className="relative flex-grow">
+                    <input
+                        type="text"
+                        placeholder="Buscar app..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2 border border-border bg-background rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-light"
+                    />
+                    <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-secondary" />
+                </div>
+                <div className="flex-shrink-0 flex items-center justify-center space-x-2 bg-subtle-button-bg rounded-lg p-1">
+                    <button 
+                        onClick={() => setSortOrder('desc')}
+                        className={`px-3 py-1 rounded-md flex items-center transition-colors text-sm w-1/2 sm:w-auto justify-center ${sortOrder === 'desc' ? 'bg-primary text-white shadow-sm' : 'text-subtle-button-text hover:bg-subtle-button-hover-bg'}`}
+                        aria-label="Ordenar por más saldo"
+                    >
+                        <BarsArrowDownIcon className="w-5 h-5 mr-1.5" />
+                        Más saldo
+                    </button>
+                    <button 
+                        onClick={() => setSortOrder('asc')}
+                        className={`px-3 py-1 rounded-md flex items-center transition-colors text-sm w-1/2 sm:w-auto justify-center ${sortOrder === 'asc' ? 'bg-primary text-white shadow-sm' : 'text-subtle-button-text hover:bg-subtle-button-hover-bg'}`}
+                        aria-label="Ordenar por menos saldo"
+                    >
+                        <BarsArrowUpIcon className="w-5 h-5 mr-1.5" />
+                        Menos saldo
+                    </button>
+                </div>
             </div>
+
+            {displayedBalances.length > 0 ? (
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {displayedBalances.map(([concept, balance]) => (
+                        <div key={concept} className="bg-surface p-3 rounded-lg shadow-md transition-transform hover:scale-105">
+                            <p className="text-sm text-text-secondary truncate font-medium" title={concept}>{concept}</p>
+                            <p className="text-xl font-bold text-primary-dark mt-1">{formatCurrency(balance)}</p>
+                        </div>
+                    ))}
+                </div>
+            ) : (
+                <p className="text-center text-sm text-text-secondary py-4 bg-background rounded-lg">No se encontraron apps con ese nombre.</p>
+            )}
         </div>
     );
 };
