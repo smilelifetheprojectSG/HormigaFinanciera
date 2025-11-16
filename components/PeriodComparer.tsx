@@ -54,7 +54,13 @@ export const PeriodComparer: React.FC<PeriodComparerProps> = ({ savings }) => {
     thisWeekSavings, lastWeekSavings, weekDifference, weekPercentageDifference 
   } = useMemo(() => {
     const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    
+    const getLocalDateString = (date: Date): string => {
+        const year = date.getFullYear();
+        const month = (date.getMonth() + 1).toString().padStart(2, '0');
+        const day = date.getDate().toString().padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
 
     const calculatePercentageDiff = (current: number, previous: number) => {
         if (previous !== 0) {
@@ -66,30 +72,36 @@ export const PeriodComparer: React.FC<PeriodComparerProps> = ({ savings }) => {
         return '0.0%';
     }
 
-    // --- Weekly Calculations ---
-    const sevenDaysAgo = new Date(today);
-    sevenDaysAgo.setDate(today.getDate() - 6);
-
+    // --- Weekly Calculations (Corrected for Mon-Sun week) ---
+    const dayOfWeek = now.getDay(); // Sun=0, Mon=1
+    const daysSinceMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+    
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - daysSinceMonday);
+    
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
+    
+    const startOfWeekStr = getLocalDateString(startOfWeek);
+    const endOfWeekStr = getLocalDateString(endOfWeek);
+    
     const thisWeekSavings = savings
-      .filter(s => {
-        const [year, month, day] = s.date.split('-').map(Number);
-        const entryDate = new Date(year, month - 1, day);
-        return entryDate >= sevenDaysAgo && entryDate <= today;
-      })
-      .reduce((sum, entry) => sum + entry.amount, 0);
+        .filter(s => s.date >= startOfWeekStr && s.date <= endOfWeekStr)
+        .reduce((sum, entry) => sum + entry.amount, 0);
 
-    const fourteenDaysAgo = new Date(today);
-    fourteenDaysAgo.setDate(today.getDate() - 13);
-    const eightDaysAgo = new Date(today);
-    eightDaysAgo.setDate(today.getDate() - 7);
+    // Last Week
+    const startOfLastWeek = new Date(startOfWeek);
+    startOfLastWeek.setDate(startOfWeek.getDate() - 7);
+    
+    const endOfLastWeek = new Date(startOfWeek);
+    endOfLastWeek.setDate(startOfWeek.getDate() - 1);
+
+    const startOfLastWeekStr = getLocalDateString(startOfLastWeek);
+    const endOfLastWeekStr = getLocalDateString(endOfLastWeek);
 
     const lastWeekSavings = savings
-      .filter(s => {
-        const [year, month, day] = s.date.split('-').map(Number);
-        const entryDate = new Date(year, month - 1, day);
-        return entryDate >= fourteenDaysAgo && entryDate <= eightDaysAgo;
-      })
-      .reduce((sum, entry) => sum + entry.amount, 0);
+        .filter(s => s.date >= startOfLastWeekStr && s.date <= endOfLastWeekStr)
+        .reduce((sum, entry) => sum + entry.amount, 0);
 
     const weekDifference = thisWeekSavings - lastWeekSavings;
     const weekPercentageDifference = calculatePercentageDiff(thisWeekSavings, lastWeekSavings);

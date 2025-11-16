@@ -22,21 +22,30 @@ export const TopApps: React.FC<TopAppsProps> = ({ savings }) => {
   };
 
   const topApps = useMemo(() => {
+    const getLocalDateString = (date: Date): string => {
+        const year = date.getFullYear();
+        const month = (date.getMonth() + 1).toString().padStart(2, '0');
+        const day = date.getDate().toString().padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
+
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const dayOfWeek = today.getDay(); // 0=Sun, 1=Mon, ..., 6=Sat
+    const daysSinceMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+    
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(today.getDate() - daysSinceMonday);
+    const startOfWeekStr = getLocalDateString(startOfWeek);
+    
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
+    const endOfWeekStr = getLocalDateString(endOfWeek);
 
-    const sevenDaysAgo = new Date(today);
-    sevenDaysAgo.setDate(today.getDate() - 6);
-
-    const last7DaysSavings = savings.filter(s => {
-      const [year, month, day] = s.date.split('-').map(Number);
-      const entryDate = new Date(year, month - 1, day);
-      return entryDate >= sevenDaysAgo && entryDate <= today;
-    });
+    const thisWeekSavings = savings.filter(s => s.date >= startOfWeekStr && s.date <= endOfWeekStr);
 
     const appEarnings = new Map<string, number>();
 
-    for (const entry of last7DaysSavings) {
+    for (const entry of thisWeekSavings) {
       if (!excludedConcepts.has(entry.description)) {
         const currentEarnings = appEarnings.get(entry.description) || 0;
         appEarnings.set(entry.description, currentEarnings + entry.amount);
@@ -51,7 +60,7 @@ export const TopApps: React.FC<TopAppsProps> = ({ savings }) => {
 
   return (
     <div className="animate-fade-in-up">
-      <h2 className="text-xl font-bold text-primary-dark mb-4">Apps Más Rentables (Últimos 7 Días)</h2>
+      <h2 className="text-xl font-bold text-primary-dark mb-4">Apps Más Rentables (Esta Semana)</h2>
       <div className="bg-surface p-6 rounded-xl shadow-lg">
         {topApps.length > 0 ? (
           <ul className="space-y-4">

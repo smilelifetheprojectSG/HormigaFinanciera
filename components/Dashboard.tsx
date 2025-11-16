@@ -23,12 +23,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ savings }) => {
     return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(value).replace(/\s/g, '\u2009');
   }
 
+  const getLocalDateString = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   const today = new Date();
-  // Corregir el string de fecha para que use la fecha local en vez de UTC
-  const year = today.getFullYear();
-  const month = (today.getMonth() + 1).toString().padStart(2, '0');
-  const day = today.getDate().toString().padStart(2, '0');
-  const todayStr = `${year}-${month}-${day}`;
+  const todayStr = getLocalDateString(today);
 
   // 1. Total Ahorrado (General)
   const totalSaved = savings.reduce((sum, entry) => sum + entry.amount, 0);
@@ -55,22 +58,22 @@ export const Dashboard: React.FC<DashboardProps> = ({ savings }) => {
     .filter(s => s.date === todayStr)
     .reduce((sum, entry) => sum + entry.amount, 0);
   
-  // 4. Ahorro de los Últimos 7 Días
-  const todayDateOnly = new Date();
-  todayDateOnly.setHours(0, 0, 0, 0);
-
-  const sevenDaysAgo = new Date(todayDateOnly);
-  // Usar getDate() - 6 nos da hoy + 6 días anteriores = 7 días en total.
-  sevenDaysAgo.setDate(todayDateOnly.getDate() - 6);
+  // 4. Ahorro de Esta Semana (Lunes a Domingo)
+  const dayOfWeek = today.getDay(); // 0=Sun, 1=Mon, ..., 6=Sat
+  const daysSinceMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+  
+  const startOfWeek = new Date(today);
+  startOfWeek.setDate(today.getDate() - daysSinceMonday);
+  const startOfWeekStr = getLocalDateString(startOfWeek);
+  
+  const endOfWeek = new Date(startOfWeek);
+  endOfWeek.setDate(startOfWeek.getDate() + 6);
+  const endOfWeekStr = getLocalDateString(endOfWeek);
 
   const thisWeekSavings = savings
-    .filter(s => {
-      const [year, month, day] = s.date.split('-').map(Number);
-      // new Date(y, m-1, d) crea una fecha a la medianoche en la zona horaria local.
-      const entryDate = new Date(year, month - 1, day);
-      return entryDate >= sevenDaysAgo && entryDate <= todayDateOnly;
-    })
+    .filter(s => s.date >= startOfWeekStr && s.date <= endOfWeekStr)
     .reduce((sum, entry) => sum + entry.amount, 0);
+
 
   // 5. Ahorro de Este Mes
   const currentYear = today.getFullYear();
@@ -141,7 +144,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ savings }) => {
             <MiniStatCard title="Total Ahorrado" value={formatCurrency(totalSaved)} />
             <MiniStatCard title="Total Disponible" value={formatCurrency(totalAvailable)} />
             <MiniStatCard title="Hoy" value={formatCurrency(todaySavings)} />
-            <MiniStatCard title="Últimos 7 Días" value={formatCurrency(thisWeekSavings)} />
+            <MiniStatCard title="Esta Semana" value={formatCurrency(thisWeekSavings)} />
             <MiniStatCard title="Este Mes" value={formatCurrency(thisMonthSavings)} />
             <MiniStatCard title="Mejor Día" value={formatCurrency(bestDayAmount)} />
             <MiniStatCard title="Promedio Diario" value={formatCurrency(averageDaily)} />
