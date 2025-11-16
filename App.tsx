@@ -15,6 +15,7 @@ import type { SavingEntry, SavingsGoal } from './types';
 import { GoalCard } from './components/GoalCard';
 import { Confetti } from './components/Confetti';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { Welcome } from './components/Welcome';
 
 
 function AppContent() {
@@ -177,6 +178,7 @@ function AppContent() {
       <Confetti isActive={showConfetti} />
       <Header />
       <main className="container mx-auto p-4 space-y-8">
+        <Welcome />
         <Dashboard savings={savings} />
         <SavingsList 
             savings={savings} 
