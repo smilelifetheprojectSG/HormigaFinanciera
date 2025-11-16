@@ -37,6 +37,7 @@ function AppContent() {
   const [deleteCandidateId, setDeleteCandidateId] = useState<string | null>(null);
   const [isDeleteGoalModalOpen, setDeleteGoalModalOpen] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [savingsToImport, setSavingsToImport] = useState<SavingEntry[] | null>(null);
   
   const { notifications, addNotification, dismissNotification } = useNotifications();
   const { concepts, addConcept, updateConcept, deleteConcept, reorderConcepts } = useConceptManager();
@@ -150,6 +151,20 @@ function AppContent() {
     setNotifiedMilestones({});
     setDeleteGoalModalOpen(false);
   }
+  
+  const handleConfirmImport = () => {
+    if (savingsToImport) {
+        // Sort by date just like the original save function does
+        const sortedSavings = [...savingsToImport].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        setSavings(sortedSavings);
+        addNotification({ title: 'Importación Completa', message: 'Tus datos se han cargado correctamente.', type: 'success' });
+    }
+    setSavingsToImport(null);
+  };
+
+  const handleImportRequest = (data: SavingEntry[]) => {
+      setSavingsToImport(data);
+  };
 
   // Concept Management Handlers
   const handleManageConcepts = () => {
@@ -191,7 +206,7 @@ function AppContent() {
             goal={goal}
             onSetGoal={() => setIsGoalSetterOpen(true)}
         />
-        <DataExporter savings={savings} />
+        <DataExporter savings={savings} onImportRequest={handleImportRequest}/>
       </main>
       
       <NotificationContainer notifications={notifications} onDismiss={dismissNotification} />
@@ -236,6 +251,15 @@ function AppContent() {
         onConfirm={handleConfirmDeleteGoal}
         title="Eliminar Meta"
         message="¿Estás seguro de que quieres eliminar tu meta de ahorro? Tu progreso hacia esta meta se perderá."
+      />
+       <ConfirmModal
+        isOpen={!!savingsToImport}
+        onClose={() => setSavingsToImport(null)}
+        onConfirm={handleConfirmImport}
+        title="Confirmar Importación"
+        message="Esto reemplazará todos tus datos actuales con los del archivo. Esta acción no se puede deshacer. ¿Estás seguro?"
+        confirmButtonText="Sí, Importar"
+        confirmButtonClass="bg-primary hover:bg-primary-dark"
       />
     </div>
   );
