@@ -244,10 +244,9 @@ function AppContent() {
 
   return (
     <>
-      {/* Scrollable content area */}
-      <div className="bg-background text-text-primary pb-32">
+      <div className="min-h-screen bg-background text-text-primary">
         <Header />
-        <main className="container mx-auto p-4 space-y-8">
+        <main className="container mx-auto p-4 space-y-8 pb-28">
           <Welcome />
           {renderView()}
         </main>
