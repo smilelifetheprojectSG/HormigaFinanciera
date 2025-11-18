@@ -59,8 +59,8 @@ export const TopApps: React.FC<TopAppsProps> = ({ savings }) => {
   }, [savings]);
 
   return (
-    <div className="animate-fade-in-up">
-      <h2 className="text-xl font-bold text-primary-dark mb-4">Apps Más Rentables (Esta Semana)</h2>
+    <div>
+      <h3 className="text-xl font-bold text-primary-dark mb-4">Apps Más Rentables (Esta Semana)</h3>
       <div className="bg-surface p-6 rounded-xl shadow-lg">
         {topApps.length > 0 ? (
           <ul className="space-y-4">

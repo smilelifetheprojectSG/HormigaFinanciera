@@ -178,7 +178,7 @@ const Balances: React.FC<{ savings: SavingEntry[] }> = ({ savings }) => {
     }
 
     return (
-        <div className="mt-6 animate-fade-in-up">
+        <div className="mt-6">
             <h3 className="text-lg font-semibold text-text-primary mb-3">Saldos en Apps</h3>
             
             <div className="flex flex-col sm:flex-row gap-3 mb-4">
@@ -213,7 +213,7 @@ const Balances: React.FC<{ savings: SavingEntry[] }> = ({ savings }) => {
             </div>
 
             {displayedBalances.length > 0 ? (
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                     {displayedBalances.map(([concept, balance]) => (
                         <div key={concept} className="bg-surface p-3 rounded-lg shadow-md transition-transform hover:scale-105">
                             <p className="text-sm text-text-secondary truncate font-medium" title={concept}>{concept}</p>
@@ -289,7 +289,7 @@ const AvailableBalances: React.FC<{ savings: SavingEntry[] }> = ({ savings }) =>
     }
 
     return (
-        <div className="mt-6 animate-fade-in-up">
+        <div className="mt-6">
             <h3 className="text-lg font-semibold text-text-primary mb-3">Saldos Disponibles</h3>
             
             <div className="flex flex-col sm:flex-row gap-3 mb-4">
@@ -324,7 +324,7 @@ const AvailableBalances: React.FC<{ savings: SavingEntry[] }> = ({ savings }) =>
             </div>
 
             {displayedAvailableBalances.length > 0 ? (
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                     {displayedAvailableBalances.map(([concept, balance]) => (
                         <div key={concept} className="bg-surface p-3 rounded-lg shadow-md transition-transform hover:scale-105">
                             <p className="text-sm text-text-secondary truncate font-medium" title={concept}>{concept}</p>
@@ -342,13 +342,11 @@ const AvailableBalances: React.FC<{ savings: SavingEntry[] }> = ({ savings }) =>
 
 export const SavingsList: React.FC<SavingsListProps> = (props) => {
   return (
-      <div>
-        <h2 className="text-xl font-bold text-primary-dark mb-4">Mis Ahorros</h2>
-        <div className="max-w-lg mx-auto">
-            <Calendar {...props} />
-            <Balances savings={props.savings} />
-            <AvailableBalances savings={props.savings} />
-        </div>
+      <div className="space-y-6">
+        <h2 className="text-xl font-bold text-primary-dark">Registro de Movimientos</h2>
+        <Calendar {...props} />
+        <Balances savings={props.savings} />
+        <AvailableBalances savings={props.savings} />
       </div>
   );
 };
