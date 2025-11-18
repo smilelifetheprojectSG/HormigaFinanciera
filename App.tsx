@@ -21,9 +21,8 @@ import { ThemeProvider } from './contexts/ThemeContext';
 import { Welcome } from './components/Welcome';
 import { DataExporter } from './components/DataExporter';
 import { AITip } from './components/AITip';
-import { BottomNavbar } from './components/BottomNavbar';
+import { PlusIcon } from './components/icons/PlusIcon';
 
-type View = 'home' | 'movements' | 'analysis' | 'settings';
 
 function AppContent() {
   const [savings, setSavings] = useLocalStorage<SavingEntry[]>('savings', []);
@@ -44,7 +43,6 @@ function AppContent() {
   const [isDeleteGoalModalOpen, setDeleteGoalModalOpen] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const [savingsToImport, setSavingsToImport] = useState<SavingEntry[] | null>(null);
-  const [activeView, setActiveView] = useState<View>('home');
   
   const { notifications, addNotification, dismissNotification } = useNotifications();
   const { concepts, addConcept, updateConcept, deleteConcept, reorderConcepts } = useConceptManager();
@@ -206,51 +204,33 @@ function AppContent() {
     deleteConcept(name);
   };
 
-  const renderView = () => {
-    const key = `${activeView}-${savings.length}`; // Force re-render on view change or data change for animations
-    switch (activeView) {
-      case 'home':
-        return (
-          <div key={key} className="space-y-8 animate-fade-in-up">
-            <Dashboard savings={savings} />
-            <GoalCard goal={goal} savings={savings} onSetGoal={() => setIsGoalSetterOpen(true)} />
-            <AITip savings={savings} />
-          </div>
-        );
-      case 'movements':
-        return (
-          <div key={key} className="animate-fade-in-up">
-            <SavingsList savings={savings} selectedDate={selectedDate} onDayClick={handleDayClick} />
-          </div>
-        );
-      case 'analysis':
-        return (
-          <div key={key} className="space-y-8 animate-fade-in-up">
-             <h2 className="text-xl font-bold text-primary-dark">Análisis de Ahorros</h2>
-            <TopApps savings={savings} />
-            <PeriodComparer savings={savings} />
-          </div>
-        );
-      case 'settings':
-        return (
-          <div key={key} className="space-y-8 animate-fade-in-up">
-            <DataExporter savings={savings} onImportRequest={handleImportRequest} />
-          </div>
-        );
-      default:
-        return null;
-    }
-  };
-
   return (
     <div className="flex flex-col min-h-screen bg-background text-text-primary">
       <Header />
-      <main className="flex-grow container mx-auto p-4 space-y-8 pb-28">
+      <main className="flex-grow container mx-auto p-4 space-y-8">
         <Welcome />
-        {renderView()}
+        <div className="space-y-8 animate-fade-in-up">
+            <Dashboard savings={savings} />
+            <GoalCard goal={goal} savings={savings} onSetGoal={() => setIsGoalSetterOpen(true)} />
+            <AITip savings={savings} />
+            <div className="max-w-lg mx-auto">
+              <SavingsList savings={savings} selectedDate={selectedDate} onDayClick={handleDayClick} />
+            </div>
+            <TopApps savings={savings} />
+            <PeriodComparer savings={savings} />
+            <DataExporter savings={savings} onImportRequest={handleImportRequest} />
+        </div>
       </main>
 
       {/* Fixed/Overlay elements */}
+       <button
+        onClick={handleFabClick}
+        className="fixed bottom-6 right-6 w-16 h-16 bg-primary rounded-full text-white flex items-center justify-center shadow-lg hover:bg-primary-dark transition-all duration-300 transform hover:scale-110 focus:outline-none focus:ring-4 focus:ring-primary-light z-40"
+        aria-label="Añadir nuevo movimiento"
+      >
+        <PlusIcon className="w-8 h-8" />
+      </button>
+
       <Confetti isActive={showConfetti} />
       <NotificationContainer notifications={notifications} onDismiss={dismissNotification} />
 
@@ -303,11 +283,6 @@ function AppContent() {
         message="Esto reemplazará todos tus datos actuales con los del archivo. Esta acción no se puede deshacer."
         confirmButtonText="Sí, Importar"
         confirmButtonClass="bg-primary hover:bg-primary-dark"
-      />
-      <BottomNavbar
-        activeView={activeView}
-        onNavigate={setActiveView}
-        onAddClick={handleFabClick}
       />
     </div>
   );

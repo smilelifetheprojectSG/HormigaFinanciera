@@ -343,7 +343,6 @@ const AvailableBalances: React.FC<{ savings: SavingEntry[] }> = ({ savings }) =>
 export const SavingsList: React.FC<SavingsListProps> = (props) => {
   return (
       <div className="space-y-6">
-        <h2 className="text-xl font-bold text-primary-dark">Registro de Movimientos</h2>
         <Calendar {...props} />
         <Balances savings={props.savings} />
         <AvailableBalances savings={props.savings} />

@@ -189,8 +189,7 @@ export const DataExporter: React.FC<DataExporterProps> = ({ savings, onImportReq
 
 
   return (
-    <div>
-      <h2 className="text-xl font-bold text-primary-dark">Ajustes y Datos</h2>
+    <div className="animate-fade-in-up">
         <div className="space-y-6 mt-4">
             <div className="bg-surface p-6 rounded-xl shadow-lg flex flex-col md:flex-row items-center">
                 <div className="flex-grow mb-4 md:mb-0 md:mr-6">

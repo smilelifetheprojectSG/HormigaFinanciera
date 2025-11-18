@@ -136,7 +136,7 @@ export const PeriodComparer: React.FC<PeriodComparerProps> = ({ savings }) => {
   }, [savings]);
 
   return (
-    <div>
+    <div className="animate-fade-in-up">
       <h3 className="text-xl font-bold text-primary-dark mb-4">Comparador de Períodos</h3>
       <div className="bg-surface p-6 rounded-xl shadow-lg">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
