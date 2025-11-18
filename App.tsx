@@ -243,14 +243,18 @@ function AppContent() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-text-primary pb-32">
-      <Confetti isActive={showConfetti} />
-      <Header />
-      <main className="container mx-auto p-4 space-y-8">
-        <Welcome />
-        {renderView()}
-      </main>
+    <>
+      {/* Scrollable content area */}
+      <div className="min-h-screen bg-background text-text-primary pb-32">
+        <Header />
+        <main className="container mx-auto p-4 space-y-8">
+          <Welcome />
+          {renderView()}
+        </main>
+      </div>
       
+      {/* Fixed/Overlay elements */}
+      <Confetti isActive={showConfetti} />
       <NotificationContainer notifications={notifications} onDismiss={dismissNotification} />
 
       <SavingsForm
@@ -299,7 +303,7 @@ function AppContent() {
         onClose={() => setSavingsToImport(null)}
         onConfirm={handleConfirmImport}
         title="Confirmar Importación"
-        message="Esto reemplazará todos tus datos actuales con los del archivo. Esta acción no se puede deshacer. ¿Estás seguro?"
+        message="Esto reemplazará todos tus datos actuales con los del archivo. Esta acción no se puede deshacer."
         confirmButtonText="Sí, Importar"
         confirmButtonClass="bg-primary hover:bg-primary-dark"
       />
@@ -308,7 +312,7 @@ function AppContent() {
         onNavigate={setActiveView}
         onAddClick={handleFabClick}
       />
-    </div>
+    </>
   );
 }
 
