@@ -243,15 +243,13 @@ function AppContent() {
   };
 
   return (
-    <>
-      <div className="min-h-screen bg-background text-text-primary">
-        <Header />
-        <main className="container mx-auto p-4 space-y-8 pb-28">
-          <Welcome />
-          {renderView()}
-        </main>
-      </div>
-      
+    <div className="flex flex-col min-h-screen bg-background text-text-primary">
+      <Header />
+      <main className="flex-grow container mx-auto p-4 space-y-8 pb-28">
+        <Welcome />
+        {renderView()}
+      </main>
+
       {/* Fixed/Overlay elements */}
       <Confetti isActive={showConfetti} />
       <NotificationContainer notifications={notifications} onDismiss={dismissNotification} />
@@ -283,21 +281,21 @@ function AppContent() {
         deleteConcept={handleDeleteConcept}
         reorderConcepts={reorderConcepts}
       />
-       <ConfirmModal
+      <ConfirmModal
         isOpen={!!deleteCandidateId}
         onClose={() => setDeleteCandidateId(null)}
         onConfirm={handleConfirmDelete}
         title="Confirmar Eliminación"
         message="¿Estás seguro de que quieres eliminar este registro? Esta acción no se puede deshacer."
       />
-       <ConfirmModal
+      <ConfirmModal
         isOpen={isDeleteGoalModalOpen}
         onClose={() => setDeleteGoalModalOpen(false)}
         onConfirm={handleConfirmDeleteGoal}
         title="Eliminar Meta"
         message="¿Estás seguro de que quieres eliminar tu meta de ahorro? Tu progreso hacia esta meta se perderá."
       />
-       <ConfirmModal
+      <ConfirmModal
         isOpen={!!savingsToImport}
         onClose={() => setSavingsToImport(null)}
         onConfirm={handleConfirmImport}
@@ -311,7 +309,7 @@ function AppContent() {
         onNavigate={setActiveView}
         onAddClick={handleFabClick}
       />
-    </>
+    </div>
   );
 }
 
