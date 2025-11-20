@@ -39,7 +39,6 @@ const parseCsvRow = (row: string): string[] => {
 export const DataExporter: React.FC<DataExporterProps> = ({ savings, onImportRequest }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [importError, setImportError] = useState('');
-  const [isExpanded, setIsExpanded] = useState(true); // Default to expanded in its own view
 
   const exportToCSV = () => {
     if (savings.length === 0) {
@@ -190,28 +189,29 @@ export const DataExporter: React.FC<DataExporterProps> = ({ savings, onImportReq
 
   return (
     <div className="animate-fade-in-up">
-        <div className="space-y-6 mt-4">
-            <div className="bg-surface p-6 rounded-xl shadow-lg flex flex-col md:flex-row items-center">
+        <h2 className="text-xl font-bold text-primary-dark mb-4">Importar / Exportar</h2>
+        <div className="space-y-6">
+            <div className="bg-surface p-6 rounded-xl shadow-lg flex flex-col md:flex-row md:items-center">
                 <div className="flex-grow mb-4 md:mb-0 md:mr-6">
                     <h3 className="text-md font-medium text-text-primary">Exportar Datos a CSV</h3>
                     <p className="text-sm text-text-secondary mt-1">
-                    Guarda una copia de seguridad de todos tus movimientos en un archivo CSV, compatible con Excel y Google Sheets.
+                    Guarda una copia de seguridad.
                     </p>
                 </div>
                 <button
                 onClick={exportToCSV}
-                className="px-6 py-3 bg-subtle-button-bg text-subtle-button-text font-semibold rounded-lg shadow-sm hover:shadow-md hover:bg-subtle-button-hover-bg transition-all flex items-center justify-center flex-shrink-0"
+                className="w-full md:w-64 px-6 py-3 bg-subtle-button-bg text-subtle-button-text font-semibold rounded-lg shadow-sm hover:shadow-md hover:bg-subtle-button-hover-bg transition-all flex items-center justify-center flex-shrink-0"
                 >
                 <DocumentArrowDownIcon className="w-5 h-5 mr-2" />
-                Descargar Archivo CSV
+                Descargar CSV
                 </button>
             </div>
 
-            <div className="bg-surface p-6 rounded-xl shadow-lg flex flex-col md:flex-row items-center">
+            <div className="bg-surface p-6 rounded-xl shadow-lg flex flex-col md:flex-row md:items-center">
                 <div className="flex-grow mb-4 md:mb-0 md:mr-6">
                     <h3 className="text-md font-medium text-text-primary">Importar Datos Hormiga</h3>
                     <p className="text-sm text-text-secondary mt-1">
-                        Carga tus movimientos desde un archivo CSV. Esto reemplazará todos los datos actuales en este dispositivo.
+                        Carga tus movimientos desde un archivo CSV.
                     </p>
                     {importError && <p className="text-red-500 text-sm mt-2 bg-red-50 p-3 rounded-lg">{importError}</p>}
                 </div>
@@ -224,7 +224,7 @@ export const DataExporter: React.FC<DataExporterProps> = ({ savings, onImportReq
                 />
                 <button
                 onClick={() => fileInputRef.current?.click()}
-                className="px-6 py-3 bg-subtle-button-bg text-subtle-button-text font-semibold rounded-lg shadow-sm hover:shadow-md hover:bg-subtle-button-hover-bg transition-all flex items-center justify-center flex-shrink-0"
+                className="w-full md:w-64 px-6 py-3 bg-subtle-button-bg text-subtle-button-text font-semibold rounded-lg shadow-sm hover:shadow-md hover:bg-subtle-button-hover-bg transition-all flex items-center justify-center flex-shrink-0"
                 >
                 <DocumentArrowUpIcon className="w-5 h-5 mr-2" />
                 Seleccionar Archivo

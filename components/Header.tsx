@@ -13,7 +13,7 @@ export const Header: React.FC = () => {
             <h1 className="text-2xl md:text-3xl font-bold text-primary-dark">
               Hormiga Financiera
             </h1>
-            <p className="text-text-secondary text-sm md:text-base">Tu asistente personal de finanzas</p>
+            <p className="text-text-secondary text-sm md:text-base">Gestión de finanzas inteligente</p>
         </div>
         <button
           onClick={toggleTheme}

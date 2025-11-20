@@ -64,17 +64,17 @@ const Calendar: React.FC<SavingsListProps> = ({ savings, selectedDate, onDayClic
     return (
         <div className="bg-surface p-4 rounded-xl shadow-lg">
             <div className="flex justify-between items-center mb-4">
-                <button onClick={() => changeMonth(-1)} className="p-1.5 rounded-full hover:bg-subtle-button-hover-bg transition-colors">
+                <button onClick={() => changeMonth(-1)} className="p-2 rounded-full hover:bg-subtle-button-hover-bg transition-colors">
                     <ChevronLeftIcon className="w-5 h-5 text-text-secondary" />
                 </button>
                 <h3 className="text-md font-semibold text-text-primary capitalize">
                     {currentMonth.toLocaleDateString('es-ES', { month: 'long', year: 'numeric', timeZone: 'UTC' })}
                 </h3>
-                <button onClick={() => changeMonth(1)} className="p-1.5 rounded-full hover:bg-subtle-button-hover-bg transition-colors">
+                <button onClick={() => changeMonth(1)} className="p-2 rounded-full hover:bg-subtle-button-hover-bg transition-colors">
                     <ChevronRightIcon className="w-5 h-5 text-text-secondary" />
                 </button>
             </div>
-            <div className="grid grid-cols-7 gap-x-2 text-center text-xs text-text-secondary pb-2">
+            <div className="grid grid-cols-7 gap-x-1 text-center text-xs text-text-secondary pb-2">
                 {weekDays.map(d => <div key={d} className="font-semibold">{d}</div>)}
             </div>
             <div className="grid grid-cols-7 gap-1">
@@ -85,7 +85,7 @@ const Calendar: React.FC<SavingsListProps> = ({ savings, selectedDate, onDayClic
                     const isToday = dateStr === todayStr;
                     const hasSavings = savingsByDate.has(dateStr);
 
-                    let dayClassNames = 'w-full aspect-square rounded-lg flex items-center justify-center transition-all duration-200 focus:outline-none relative';
+                    let dayClassNames = 'w-full aspect-square rounded-lg flex items-center justify-center transition-all duration-200 focus:outline-none relative text-sm';
 
                     if (isCurrentMonth) {
                          dayClassNames += ' cursor-pointer ';
@@ -113,7 +113,7 @@ const Calendar: React.FC<SavingsListProps> = ({ savings, selectedDate, onDayClic
                        >
                             <span>{d.getUTCDate()}</span>
                             {isToday && (
-                                <span className={`absolute bottom-1.5 h-1 w-1 rounded-full ${isSelected ? 'bg-white' : 'bg-primary-light'}`}></span>
+                                <span className={`absolute bottom-1 h-1 w-1 rounded-full ${isSelected ? 'bg-white' : 'bg-primary-light'}`}></span>
                             )}
                        </button>
                     );
@@ -199,7 +199,7 @@ const Balances: React.FC<{ savings: SavingEntry[] }> = ({ savings }) => {
                         aria-label="Ordenar por más saldo"
                     >
                         <BarsArrowDownIcon className="w-5 h-5 mr-1.5" />
-                        Más saldo
+                        Más
                     </button>
                     <button 
                         onClick={() => setSortOrder('asc')}
@@ -207,22 +207,22 @@ const Balances: React.FC<{ savings: SavingEntry[] }> = ({ savings }) => {
                         aria-label="Ordenar por menos saldo"
                     >
                         <BarsArrowUpIcon className="w-5 h-5 mr-1.5" />
-                        Menos saldo
+                        Menos
                     </button>
                 </div>
             </div>
 
             {displayedBalances.length > 0 ? (
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 gap-3">
                     {displayedBalances.map(([concept, balance]) => (
-                        <div key={concept} className="bg-surface p-3 rounded-lg shadow-md transition-transform hover:scale-105">
-                            <p className="text-sm text-text-secondary truncate font-medium" title={concept}>{concept}</p>
-                            <p className="text-xl font-bold text-primary-dark mt-1">{formatCurrency(balance)}</p>
+                        <div key={concept} className="bg-surface p-3 rounded-lg shadow-md transition-transform active:scale-95">
+                            <p className="text-xs text-text-secondary truncate font-medium uppercase tracking-wide" title={concept}>{concept}</p>
+                            <p className="text-lg font-bold text-primary-dark mt-0.5">{formatCurrency(balance)}</p>
                         </div>
                     ))}
                 </div>
             ) : (
-                <p className="text-center text-sm text-text-secondary py-4 bg-background rounded-lg">No se encontraron apps con ese nombre.</p>
+                <p className="text-center text-sm text-text-secondary py-4 bg-background rounded-lg">No se encontraron apps.</p>
             )}
         </div>
     );
@@ -303,37 +303,19 @@ const AvailableBalances: React.FC<{ savings: SavingEntry[] }> = ({ savings }) =>
                     />
                     <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-secondary" />
                 </div>
-                <div className="flex-shrink-0 flex items-center justify-center space-x-2 bg-subtle-button-bg rounded-lg p-1">
-                    <button 
-                        onClick={() => setSortOrder('desc')}
-                        className={`px-3 py-1 rounded-md flex items-center transition-colors text-sm w-1/2 sm:w-auto justify-center ${sortOrder === 'desc' ? 'bg-primary text-white shadow-sm' : 'text-subtle-button-text hover:bg-subtle-button-hover-bg'}`}
-                        aria-label="Ordenar por más saldo"
-                    >
-                        <BarsArrowDownIcon className="w-5 h-5 mr-1.5" />
-                        Más saldo
-                    </button>
-                    <button 
-                        onClick={() => setSortOrder('asc')}
-                        className={`px-3 py-1 rounded-md flex items-center transition-colors text-sm w-1/2 sm:w-auto justify-center ${sortOrder === 'asc' ? 'bg-primary text-white shadow-sm' : 'text-subtle-button-text hover:bg-subtle-button-hover-bg'}`}
-                        aria-label="Ordenar por menos saldo"
-                    >
-                        <BarsArrowUpIcon className="w-5 h-5 mr-1.5" />
-                        Menos saldo
-                    </button>
-                </div>
             </div>
 
             {displayedAvailableBalances.length > 0 ? (
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                     {displayedAvailableBalances.map(([concept, balance]) => (
-                        <div key={concept} className="bg-surface p-3 rounded-lg shadow-md transition-transform hover:scale-105">
-                            <p className="text-sm text-text-secondary truncate font-medium" title={concept}>{concept}</p>
-                            <p className="text-xl font-bold text-primary-dark mt-1">{formatCurrency(balance)}</p>
+                        <div key={concept} className="bg-surface p-4 rounded-lg shadow-md flex justify-between items-center">
+                            <span className="text-sm text-text-primary font-medium">{concept}</span>
+                            <span className="text-lg font-bold text-primary-dark">{formatCurrency(balance)}</span>
                         </div>
                     ))}
                 </div>
             ) : (
-                <p className="text-center text-sm text-text-secondary py-4 bg-background rounded-lg">No se encontraron saldos con ese nombre.</p>
+                <p className="text-center text-sm text-text-secondary py-4 bg-background rounded-lg">No se encontraron saldos.</p>
             )}
         </div>
     );
@@ -343,6 +325,7 @@ const AvailableBalances: React.FC<{ savings: SavingEntry[] }> = ({ savings }) =>
 export const SavingsList: React.FC<SavingsListProps> = (props) => {
   return (
       <div className="space-y-6">
+        <h2 className="text-xl font-bold text-primary-dark">Movimientos & Calendario</h2>
         <Calendar {...props} />
         <Balances savings={props.savings} />
         <AvailableBalances savings={props.savings} />

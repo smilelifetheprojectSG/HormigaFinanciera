@@ -20,9 +20,10 @@ import { Confetti } from './components/Confetti';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { Welcome } from './components/Welcome';
 import { DataExporter } from './components/DataExporter';
-import { AITip } from './components/AITip';
-import { PlusIcon } from './components/icons/PlusIcon';
+import { BottomNavbar } from './components/BottomNavbar';
+import { PencilIcon } from './components/icons/PencilIcon';
 
+type View = 'home' | 'movements' | 'analysis' | 'settings';
 
 function AppContent() {
   const [savings, setSavings] = useLocalStorage<SavingEntry[]>('savings', []);
@@ -43,6 +44,9 @@ function AppContent() {
   const [isDeleteGoalModalOpen, setDeleteGoalModalOpen] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const [savingsToImport, setSavingsToImport] = useState<SavingEntry[] | null>(null);
+  
+  // Navigation State
+  const [activeView, setActiveView] = useState<View>('home');
   
   const { notifications, addNotification, dismissNotification } = useNotifications();
   const { concepts, addConcept, updateConcept, deleteConcept, reorderConcepts } = useConceptManager();
@@ -186,10 +190,16 @@ function AppContent() {
     setManageDayModalOpen(false);
     setConceptManagerOpen(true);
   };
+  
+  // Special handler for settings page to open concept manager directly
+  const handleOpenConceptManagerDirectly = () => {
+    setConceptManagerOpen(true);
+  };
 
   const handleCloseConceptManager = () => {
     setConceptManagerOpen(false);
-    setManageDayModalOpen(true); // Re-open the savings form
+    // Only re-open savings form if it was previously open (handled by logic inside SavingsForm mostly, but here we just close)
+    // If called from settings, we just close.
   };
 
   const handleUpdateConcept = (oldName: string, newName: string) => {
@@ -205,32 +215,61 @@ function AppContent() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-background text-text-primary">
+    <div className="min-h-screen bg-background text-text-primary font-sans pb-safe">
       <Header />
-      <main className="flex-grow container mx-auto p-4 space-y-8">
-        <Welcome />
-        <div className="space-y-8 animate-fade-in-up">
-            <Dashboard savings={savings} />
-            <GoalCard goal={goal} savings={savings} onSetGoal={() => setIsGoalSetterOpen(true)} />
-            <AITip savings={savings} />
-            <div className="max-w-lg mx-auto">
+      
+      {/* 
+        Main content container. 
+        pb-24 ensures content isn't hidden behind the fixed bottom navbar.
+        safe-area adjustments are handled by standard margins.
+      */}
+      <main className="container mx-auto p-4 pb-24 space-y-6">
+        
+        {activeView === 'home' && (
+          <div className="space-y-6 animate-fade-in-up">
+             <Welcome />
+             <Dashboard savings={savings} />
+             <GoalCard goal={goal} savings={savings} onSetGoal={() => setIsGoalSetterOpen(true)} />
+          </div>
+        )}
+
+        {activeView === 'movements' && (
+           <div className="space-y-6 animate-fade-in-up">
               <SavingsList savings={savings} selectedDate={selectedDate} onDayClick={handleDayClick} />
+           </div>
+        )}
+
+        {activeView === 'analysis' && (
+           <div className="space-y-6 animate-fade-in-up">
+              <TopApps savings={savings} />
+              <PeriodComparer savings={savings} />
+           </div>
+        )}
+
+        {activeView === 'settings' && (
+            <div className="space-y-6 animate-fade-in-up">
+                <div className="bg-surface p-6 rounded-xl shadow-lg flex flex-col md:flex-row md:items-center justify-between">
+                    <div className="mb-4 md:mb-0">
+                        <h3 className="text-lg font-semibold text-text-primary">Gestionar Conceptos</h3>
+                        <p className="text-sm text-text-secondary">Personaliza las categorías de tus ingresos y gastos.</p>
+                    </div>
+                    <button 
+                        onClick={handleOpenConceptManagerDirectly}
+                        className="w-full md:w-auto px-4 py-2 bg-subtle-button-bg text-subtle-button-text font-medium rounded-lg hover:bg-subtle-button-hover-bg transition-colors flex items-center justify-center"
+                    >
+                        <PencilIcon className="w-5 h-5 mr-2"/>
+                        Editar Conceptos
+                    </button>
+                </div>
+                <DataExporter savings={savings} onImportRequest={handleImportRequest} />
             </div>
-            <TopApps savings={savings} />
-            <PeriodComparer savings={savings} />
-            <DataExporter savings={savings} onImportRequest={handleImportRequest} />
-        </div>
+        )}
+
       </main>
 
-      {/* Fixed/Overlay elements */}
-       <button
-        onClick={handleFabClick}
-        className="fixed bottom-6 right-6 w-16 h-16 bg-primary rounded-full text-white flex items-center justify-center shadow-lg hover:bg-primary-dark transition-all duration-300 transform hover:scale-110 focus:outline-none focus:ring-4 focus:ring-primary-light z-40"
-        aria-label="Añadir nuevo movimiento"
-      >
-        <PlusIcon className="w-8 h-8" />
-      </button>
-
+      {/* Fixed Elements */}
+      <BottomNavbar activeView={activeView} onNavigate={setActiveView} onAddClick={handleFabClick} />
+      
       <Confetti isActive={showConfetti} />
       <NotificationContainer notifications={notifications} onDismiss={dismissNotification} />
 
