@@ -35,8 +35,10 @@ export const GoalCard: React.FC<GoalCardProps> = ({ savings, goal, onSetGoal }) 
 
     const today = new Date();
     const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    
+    // Cálculo actualizado: Suma todos los ahorros del día, sin filtrar por concepto.
     const currentTodaySavings = savings
-      .filter(s => s.date === todayStr && availableBalanceConcepts.includes(s.description))
+      .filter(s => s.date === todayStr)
       .reduce((sum, entry) => sum + entry.amount, 0);
 
     const remainingAmount = goal.target - totalAvailable;
@@ -82,7 +84,7 @@ export const GoalCard: React.FC<GoalCardProps> = ({ savings, goal, onSetGoal }) 
                   
                   {goal.dailyAmount > 0 && (
                       <div className="mt-4 pt-4 border-t border-border animate-fade-in-up">
-                          <h4 className="text-sm font-medium text-text-secondary mb-1">Progreso Mínimo Diario (En saldos)</h4>
+                          <h4 className="text-sm font-medium text-text-secondary mb-1">Progreso Mínimo Diario</h4>
                           <div className="flex justify-between items-baseline">
                               <span className="text-xl font-bold text-secondary-dark">{formatCurrency(todaySavings)}</span>
                               <span className="text-sm text-text-secondary">de {formatCurrency(goal.dailyAmount)}</span>
