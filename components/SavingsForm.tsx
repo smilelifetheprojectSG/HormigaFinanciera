@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { SavingEntry } from '../types';
 import { XMarkIcon } from './icons/XMarkIcon';
@@ -7,8 +8,8 @@ import { PencilIcon } from './icons/PencilIcon';
 import { TrashIcon } from './icons/TrashIcon';
 import { MinusIcon } from './icons/MinusIcon';
 import { PlusIcon } from './icons/PlusIcon';
-import { Cog6ToothIcon } from './icons/Cog6ToothIcon';
 import { MinusCircleIcon } from './icons/MinusCircleIcon';
+import { GearsIcon } from './icons/GearsIcon';
 
 
 interface SavingsFormProps {
@@ -549,7 +550,7 @@ export const SavingsForm: React.FC<SavingsFormProps> = ({ isOpen, onClose, onSav
                                 <div className="flex justify-between items-center mb-1">
                                 <label htmlFor="concept" className="block text-sm font-medium text-text-secondary">App/Concepto</label>
                                 <button type="button" onClick={onManageConcepts} className="text-xs text-primary-light hover:text-primary font-medium flex items-center space-x-1 transition-colors">
-                                    <Cog6ToothIcon className="w-4 h-4" />
+                                    <GearsIcon className="w-4 h-4" />
                                     <span>Gestionar</span>
                                 </button>
                                 </div>

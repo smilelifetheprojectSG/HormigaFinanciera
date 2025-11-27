@@ -1,3 +1,4 @@
+
 import React, { useMemo } from 'react';
 import { SavingEntry, SavingsGoal } from '../types';
 import { FlagIcon } from './icons/FlagIcon';
@@ -13,9 +14,19 @@ export const GoalCard: React.FC<GoalCardProps> = ({ savings, goal, onSetGoal }) 
     return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(value).replace(/\s/g, '\u2009');
   }
   
-  const totalSaved = savings.reduce((sum, entry) => sum + entry.amount, 0);
+  const availableBalanceConcepts = [
+    'Saldo en efectivo',
+    'Saldo en Revolut Mama',
+    'Saldo en Revolut Javi',
+    'Saldo en PayPal Mama',
+    'Saldo en PayPal Javi'
+  ];
 
-  const goalProgress = goal && goal.target > 0 ? (totalSaved / goal.target) * 100 : 0;
+  const totalAvailable = savings
+    .filter(entry => availableBalanceConcepts.includes(entry.description))
+    .reduce((sum, entry) => sum + entry.amount, 0);
+
+  const goalProgress = goal && goal.target > 0 ? (totalAvailable / goal.target) * 100 : 0;
   
   const { daysRemainingText, todaySavings, dailyProgress } = useMemo(() => {
     if (!goal) {
@@ -25,10 +36,10 @@ export const GoalCard: React.FC<GoalCardProps> = ({ savings, goal, onSetGoal }) 
     const today = new Date();
     const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
     const currentTodaySavings = savings
-      .filter(s => s.date === todayStr)
+      .filter(s => s.date === todayStr && availableBalanceConcepts.includes(s.description))
       .reduce((sum, entry) => sum + entry.amount, 0);
 
-    const remainingAmount = goal.target - totalSaved;
+    const remainingAmount = goal.target - totalAvailable;
 
     let daysStr: string | null = null;
     if (remainingAmount > 0 && goal.dailyAmount > 0) {
@@ -43,7 +54,7 @@ export const GoalCard: React.FC<GoalCardProps> = ({ savings, goal, onSetGoal }) 
         todaySavings: currentTodaySavings, 
         dailyProgress: currentDailyProgress, 
     };
-  }, [goal, savings, totalSaved]);
+  }, [goal, savings, totalAvailable]);
 
 
   return (
@@ -58,7 +69,7 @@ export const GoalCard: React.FC<GoalCardProps> = ({ savings, goal, onSetGoal }) 
               <>
                   <p className="text-lg text-primary-dark font-semibold truncate mb-2" title={goal.description}>{goal.description}</p>
                   <div className="flex justify-between items-baseline">
-                      <span className="text-3xl font-bold text-primary-dark">{formatCurrency(totalSaved)}</span>
+                      <span className="text-3xl font-bold text-primary-dark">{formatCurrency(totalAvailable)}</span>
                       <span className="text-base text-text-secondary">de {formatCurrency(goal.target)}</span>
                   </div>
                   <div className="w-full bg-progress-bar-bg rounded-full h-3.5 mt-2">
@@ -71,7 +82,7 @@ export const GoalCard: React.FC<GoalCardProps> = ({ savings, goal, onSetGoal }) 
                   
                   {goal.dailyAmount > 0 && (
                       <div className="mt-4 pt-4 border-t border-border animate-fade-in-up">
-                          <h4 className="text-sm font-medium text-text-secondary mb-1">Progreso Mínimo Diario</h4>
+                          <h4 className="text-sm font-medium text-text-secondary mb-1">Progreso Mínimo Diario (En saldos)</h4>
                           <div className="flex justify-between items-baseline">
                               <span className="text-xl font-bold text-secondary-dark">{formatCurrency(todaySavings)}</span>
                               <span className="text-sm text-text-secondary">de {formatCurrency(goal.dailyAmount)}</span>

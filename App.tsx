@@ -52,12 +52,23 @@ function AppContent() {
   const { concepts, addConcept, updateConcept, deleteConcept, reorderConcepts } = useConceptManager();
 
 
-  const totalSaved = savings.reduce((sum, entry) => sum + entry.amount, 0);
+  // Calcular el Total Disponible (Saldos en cuentas específicas) para las metas
+  const availableBalanceConcepts = [
+    'Saldo en efectivo',
+    'Saldo en Revolut Mama',
+    'Saldo en Revolut Javi',
+    'Saldo en PayPal Mama',
+    'Saldo en PayPal Javi'
+  ];
+
+  const totalAvailable = savings
+    .filter(entry => availableBalanceConcepts.includes(entry.description))
+    .reduce((sum, entry) => sum + entry.amount, 0);
 
   useEffect(() => {
     if (!goal) return;
 
-    const goalProgress = goal.target > 0 ? (totalSaved / goal.target) * 100 : 0;
+    const goalProgress = goal.target > 0 ? (totalAvailable / goal.target) * 100 : 0;
 
     const checkAndNotify = (key: string, condition: boolean, notification: { title: string, message: string, type: 'success' | 'info' | 'warning' | 'error' }) => {
         if (condition && !notifiedMilestones[key]) {
@@ -76,7 +87,7 @@ function AppContent() {
     }
 
     // Deadline reminders (calculated dynamically)
-    const remainingAmount = goal.target - totalSaved;
+    const remainingAmount = goal.target - totalAvailable;
     let diffDays = -1;
     if (remainingAmount > 0 && goal.dailyAmount > 0) {
         diffDays = Math.ceil(remainingAmount / goal.dailyAmount);
@@ -86,7 +97,7 @@ function AppContent() {
         checkAndNotify('deadline_1', diffDays <= 1, { title: '¡Último día!', message: `Tu meta "${goal.description}" vence pronto.`, type: 'warning' });
         checkAndNotify('deadline_7', diffDays > 1 && diffDays <= 7, { title: 'Una semana restante', message: `Quedan 7 días o menos para tu meta.`, type: 'warning' });
     }
-  }, [savings, goal, addNotification, notifiedMilestones, setNotifiedMilestones, totalSaved]);
+  }, [savings, goal, addNotification, notifiedMilestones, setNotifiedMilestones, totalAvailable]);
 
   const handleDayClick = useCallback((date: string) => {
     setSelectedDate(date);
@@ -289,7 +300,7 @@ function AppContent() {
         onSave={handleSaveGoal}
         onDelete={requestDeleteGoal}
         currentGoal={goal}
-        totalSaved={totalSaved}
+        totalSaved={totalAvailable}
       />
       <ConceptManager
         isOpen={isConceptManagerOpen}
