@@ -38,15 +38,15 @@ const SecondaryStatCard: React.FC<{ title: string; value: string }> = ({ title, 
     </div>
 );
 
-// Tarjeta Pequeña con Icono
+// Tarjeta Pequeña con Icono - AJUSTADA PARA MÓVIL
 const MiniStatCard: React.FC<{ title: string; value: string; icon: React.ReactNode; colorClass: string }> = ({ title, value, icon, colorClass }) => (
-    <div className="bg-surface p-4 rounded-xl shadow-md flex items-center space-x-4 border border-border/50 hover:border-primary/20 transition-colors">
-        <div className={`p-3 rounded-xl ${colorClass} bg-opacity-10 text-opacity-100 flex-shrink-0`}>
-            {React.cloneElement(icon as React.ReactElement, { className: `w-6 h-6 ${colorClass.replace('bg-', 'text-')}` })}
+    <div className="bg-surface p-3 sm:p-4 rounded-xl shadow-md flex items-center space-x-3 sm:space-x-4 border border-border/50 hover:border-primary/20 transition-colors h-full">
+        <div className={`p-2.5 sm:p-3 rounded-xl ${colorClass} bg-opacity-10 text-opacity-100 flex-shrink-0`}>
+            {React.cloneElement(icon as React.ReactElement, { className: `w-5 h-5 sm:w-6 sm:h-6 ${colorClass.replace('bg-', 'text-')}` })}
         </div>
-        <div>
-            <p className="text-xs font-medium text-text-secondary uppercase tracking-wide">{title}</p>
-            <p className="text-lg font-bold text-text-primary">{value}</p>
+        <div className="min-w-0 flex-1">
+            <p className="text-[10px] sm:text-xs font-bold text-text-secondary uppercase tracking-wide truncate leading-tight">{title}</p>
+            <p className="text-base sm:text-lg font-bold text-text-primary truncate leading-tight mt-0.5">{value}</p>
         </div>
     </div>
 );
@@ -173,13 +173,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ savings }) => {
             <SecondaryStatCard title="Total Acumulado" value={formatCurrency(totalSaved)} />
             
             {/* Grid de Detalles Unificado */}
-            {/* 
-              Orden en móvil (2 columnas): 
-              1. Hoy            2. Promedio
-              3. Esta Semana    4. Este Mes
-              5. Racha Actual   6. Mejor Día
-            */}
-            <div className="col-span-2 md:col-span-3 grid grid-cols-2 lg:grid-cols-3 gap-4 mt-2">
+            <div className="col-span-2 md:col-span-3 grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 mt-2">
                 <MiniStatCard 
                     title="Hoy" 
                     value={formatCurrency(todaySavings)} 
