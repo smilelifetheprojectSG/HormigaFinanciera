@@ -1,10 +1,33 @@
-import React, { useState, useMemo } from 'react';
+
+import React, { useState, useMemo, useEffect } from 'react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 
 export const Welcome: React.FC = () => {
   const [userName, setUserName] = useLocalStorage<string | null>('userName', null);
   const [nameInput, setNameInput] = useState('');
   const [error, setError] = useState('');
+  const [time, setTime] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTime(new Date());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const formattedTime = useMemo(() => {
+    const timeString = new Intl.DateTimeFormat('es-ES', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+      timeZone: 'Europe/Madrid'
+    }).format(time);
+
+    // Usar Regex para reemplazar a. m. / p. m. manejando cualquier tipo de espacio (incluyendo espacios de no separación)
+    return timeString
+        .replace(/a\.\s*m\./gi, 'a.m.')
+        .replace(/p\.\s*m\./gi, 'p.m.');
+  }, [time]);
 
   const handleSaveName = (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,7 +45,7 @@ export const Welcome: React.FC = () => {
     if (hour >= 5 && hour < 12) return 'Buenos días';
     if (hour >= 12 && hour < 20) return 'Buenas tardes';
     return 'Buenas noches';
-  }, []); // Recalculates only on component mount, which is fine for this use case.
+  }, []); 
 
   if (!userName) {
     return (
@@ -56,10 +79,15 @@ export const Welcome: React.FC = () => {
   }
 
   return (
-    <div className="mb-6 animate-fade-in-up">
+    <div className="mb-6 animate-fade-in-up flex flex-row justify-between items-end">
       <h2 className="text-2xl md:text-3xl font-bold text-text-primary">
         {greeting}, <span className="text-primary-dark">{userName}</span>!
       </h2>
+      <div className="text-right">
+          <p className="text-lg md:text-xl font-semibold text-text-secondary tabular-nums">
+              {formattedTime}
+          </p>
+      </div>
     </div>
   );
 };

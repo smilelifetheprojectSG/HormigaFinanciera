@@ -41,7 +41,7 @@ interface BottomNavbarProps {
 
 export const BottomNavbar: React.FC<BottomNavbarProps> = ({ activeView, onNavigate, onAddClick }) => {
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-surface/95 backdrop-blur-md border-t border-border shadow-[0_-2px_10px_rgba(0,0,0,0.05)] z-40 pb-safe">
+    <nav className="fixed bottom-0 left-0 right-0 bg-surface border-t border-border shadow-[0_-2px_10px_rgba(0,0,0,0.05)] z-40 pb-safe">
       <div className="flex justify-between items-center h-16 max-w-lg mx-auto px-1">
         <NavItem 
           icon={<HomeIcon className="w-6 h-6" />} 

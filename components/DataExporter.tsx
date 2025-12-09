@@ -54,7 +54,8 @@ export const DataExporter: React.FC<DataExporterProps> = ({ savings, onImportReq
       'Moneda Original',
       'Cantidad Original',
       'Tasa de Cambio (a EUR)',
-      'Cantidad en EUR'
+      'Cantidad en EUR',
+      'Hora Exacta (Timestamp)'
     ];
 
     const csvRows = [headers.join(',')];
@@ -81,7 +82,8 @@ export const DataExporter: React.FC<DataExporterProps> = ({ savings, onImportReq
         escapeCsvValue(entry.currency),
         escapeCsvValue(entry.originalAmount),
         escapeCsvValue(entry.exchangeRate),
-        escapeCsvValue(entry.amount)
+        escapeCsvValue(entry.amount),
+        escapeCsvValue(entry.timestamp)
       ];
       csvRows.push(row.join(','));
     }
@@ -107,12 +109,14 @@ export const DataExporter: React.FC<DataExporterProps> = ({ savings, onImportReq
   const parseCSV = (csvText: string): SavingEntry[] => {
     const lines = csvText.trim().replace(/\r\n/g, '\n').split('\n');
     const headerLine = lines.shift()?.trim();
-    const expectedHeader = 'ID,Fecha,Concepto,Nota,Moneda Original,Cantidad Original,Tasa de Cambio (a EUR),Cantidad en EUR';
+    // Support both old and new formats
+    const expectedHeaderV1 = 'ID,Fecha,Concepto,Nota,Moneda Original,Cantidad Original,Tasa de Cambio (a EUR),Cantidad en EUR';
+    const expectedHeaderV2 = 'ID,Fecha,Concepto,Nota,Moneda Original,Cantidad Original,Tasa de Cambio (a EUR),Cantidad en EUR,Hora Exacta (Timestamp)';
     
     // Allow for BOM character at the start of the file
     const header = headerLine?.charCodeAt(0) === 0xFEFF ? headerLine.substring(1) : headerLine;
 
-    if (header !== expectedHeader) {
+    if (header !== expectedHeaderV1 && header !== expectedHeaderV2) {
         throw new Error('El archivo no tiene el formato correcto. Las cabeceras no coinciden.');
     }
 
@@ -123,11 +127,11 @@ export const DataExporter: React.FC<DataExporterProps> = ({ savings, onImportReq
         
         const row = parseCsvRow(line);
 
-        if (row.length !== 8) {
-            throw new Error(`Error en la línea ${i + 2}: se esperaban 8 columnas, pero se encontraron ${row.length}.`);
+        if (row.length < 8) {
+            throw new Error(`Error en la línea ${i + 2}: se esperaban al menos 8 columnas, pero se encontraron ${row.length}.`);
         }
 
-        const [id, date, description, note, currency, originalAmountStr, exchangeRateStr, amountStr] = row;
+        const [id, date, description, note, currency, originalAmountStr, exchangeRateStr, amountStr, timestamp] = row;
 
         const originalAmount = parseFloat(originalAmountStr);
         const amount = parseFloat(amountStr);
@@ -152,7 +156,8 @@ export const DataExporter: React.FC<DataExporterProps> = ({ savings, onImportReq
             currency: currency as 'EUR' | 'USD',
             originalAmount,
             exchangeRate,
-            amount
+            amount,
+            timestamp: timestamp || undefined
         });
     }
     return entries;

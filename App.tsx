@@ -16,6 +16,7 @@ import type { SavingEntry, SavingsGoal } from './types';
 import { GoalCard } from './components/GoalCard';
 import { TopApps } from './components/TopApps';
 import { PeriodComparer } from './components/PeriodComparer';
+import { TransactionHistory } from './components/TransactionHistory';
 import { Confetti } from './components/Confetti';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { Welcome } from './components/Welcome';
@@ -128,11 +129,15 @@ function AppContent() {
         
         for (const entry of entriesToProcess) {
             if ('id' in entry) {
-                // Editing existing entry
+                // Editing existing entry - Preserve original timestamp if it exists, otherwise don't add one (or could add 'updatedAt' in future)
                 updatedSavings = updatedSavings.map(e => e.id === entry.id ? entry as SavingEntry : e);
             } else {
-                // Adding new entry
-                updatedSavings.push({ ...entry, id: uuidv4() });
+                // Adding new entry - Add current timestamp
+                updatedSavings.push({ 
+                  ...entry, 
+                  id: uuidv4(),
+                  timestamp: new Date().toISOString() 
+                });
                 newEntriesAdded = true;
                 if (entry.amount > 0) {
                     hasPositiveAmount = true;
@@ -148,6 +153,11 @@ function AppContent() {
         setShowConfetti(true);
         setTimeout(() => setShowConfetti(false), 4000);
     }
+  };
+
+  const handleToggleStatus = (entry: SavingEntry) => {
+    const newStatus = entry.status === 'pending' ? 'completed' : 'pending';
+    handleSaveEntry({ ...entry, status: newStatus });
   };
 
   const requestDeleteEntry = useCallback((id: string) => {
@@ -254,6 +264,7 @@ function AppContent() {
            <div className="space-y-6 animate-fade-in-up">
               <TopApps savings={savings} />
               <PeriodComparer savings={savings} />
+              <TransactionHistory savings={savings} onToggleStatus={handleToggleStatus} />
            </div>
         )}
 

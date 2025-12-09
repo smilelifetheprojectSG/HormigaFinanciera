@@ -10,6 +10,7 @@ import { MinusIcon } from './icons/MinusIcon';
 import { PlusIcon } from './icons/PlusIcon';
 import { MinusCircleIcon } from './icons/MinusCircleIcon';
 import { GearsIcon } from './icons/GearsIcon';
+import { ClockIcon } from './icons/ClockIcon';
 
 
 interface SavingsFormProps {
@@ -113,6 +114,11 @@ export const SavingsForm: React.FC<SavingsFormProps> = ({ isOpen, onClose, onSav
     setAmount(newAmount.toFixed(2));
   };
 
+  const handleToggleStatus = (entry: SavingEntry) => {
+      const newStatus = entry.status === 'pending' ? 'completed' : 'pending';
+      onSave({ ...entry, status: newStatus });
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -177,7 +183,7 @@ export const SavingsForm: React.FC<SavingsFormProps> = ({ isOpen, onClose, onSav
         const noteText = note.trim();
         const entriesToSave: Omit<SavingEntry, 'id'>[] = [];
 
-        // 1. Gasto del retiro (desde el origen)
+        // 1. Gasto del retiro (desde el origen) - Generalmente inmediato
         entriesToSave.push({
             amount: -finalAmountInEur,
             originalAmount: -numericAmount,
@@ -186,6 +192,7 @@ export const SavingsForm: React.FC<SavingsFormProps> = ({ isOpen, onClose, onSav
             description: concept,
             note: `Retiro hacia ${destinationConcept}${noteText ? ` (${noteText})` : ''}`,
             date,
+            status: 'completed' 
         });
 
         // 2. Gasto de la comisión (desde el origen)
@@ -198,10 +205,11 @@ export const SavingsForm: React.FC<SavingsFormProps> = ({ isOpen, onClose, onSav
                 description: concept, // La comisión también se resta del origen
                 note: `Comisión por retiro hacia ${destinationConcept}`,
                 date,
+                status: 'completed'
             });
         }
         
-        // 3. Ingreso del retiro (hacia el destino)
+        // 3. Ingreso del retiro (hacia el destino) - Puede ser pendiente
         entriesToSave.push({
             amount: finalAmountInEur,
             originalAmount: numericAmount,
@@ -210,6 +218,7 @@ export const SavingsForm: React.FC<SavingsFormProps> = ({ isOpen, onClose, onSav
             description: destinationConcept,
             note: `Retiro desde ${concept}${noteText ? ` (${noteText})` : ''}`,
             date,
+            status: 'completed'
         });
 
         onSave(entriesToSave);
@@ -240,6 +249,7 @@ export const SavingsForm: React.FC<SavingsFormProps> = ({ isOpen, onClose, onSav
             description: transferSource,
             note: `Transferencia a ${transferDestination}${noteText ? ` (${noteText})` : ''}`,
             date,
+            status: 'completed'
         });
         
         // 2. Gasto de la comisión (desde el origen)
@@ -252,6 +262,7 @@ export const SavingsForm: React.FC<SavingsFormProps> = ({ isOpen, onClose, onSav
                 description: transferSource,
                 note: `Comisión por transferencia a ${transferDestination}`,
                 date,
+                status: 'completed'
             });
         }
 
@@ -264,6 +275,7 @@ export const SavingsForm: React.FC<SavingsFormProps> = ({ isOpen, onClose, onSav
             description: transferDestination,
             note: `Transferencia desde ${transferSource}${noteText ? ` (${noteText})` : ''}`,
             date,
+            status: 'completed'
         });
         
         onSave(entriesToSave);
@@ -286,6 +298,7 @@ export const SavingsForm: React.FC<SavingsFormProps> = ({ isOpen, onClose, onSav
           description: finalConcept.trim(),
           note: note.trim() || undefined,
           date,
+          status: 'completed'
         };
 
         if (entryToEdit) {
@@ -317,6 +330,16 @@ export const SavingsForm: React.FC<SavingsFormProps> = ({ isOpen, onClose, onSav
   }, [date]);
   
   const formatCurrency = (value: number) => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(value).replace(/\s/g, '\u2009');
+
+  const formatTime = (isoString?: string) => {
+    if (!isoString) return '';
+    try {
+        const date = new Date(isoString);
+        return date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    } catch {
+        return '';
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -364,19 +387,38 @@ export const SavingsForm: React.FC<SavingsFormProps> = ({ isOpen, onClose, onSav
                         <ul className="space-y-2 animate-fade-in-up">
                             {savingsForDate.map(entry => {
                                 const isIncome = entry.amount >= 0;
+                                const isPendingEntry = entry.status === 'pending';
                                 return (
                                     <li key={entry.id} className={`p-3 rounded-lg flex items-start transition-colors ${!isIncome ? 'bg-red-subtle-bg' : (entry.id === entryToEdit?.id ? 'bg-primary/10' : 'bg-background')}`}>
-                                        {isIncome ? 
-                                        <CheckCircleIcon className="w-6 h-6 text-primary mr-3 mt-0.5 flex-shrink-0" />
-                                        : <MinusCircleIcon className="w-6 h-6 text-red-500 mr-3 mt-0.5 flex-shrink-0" />
-                                        }
+                                        {/* Status Toggle Button */}
+                                        <button 
+                                            onClick={() => handleToggleStatus(entry)}
+                                            title={isPendingEntry ? "Marcar como Recibido" : "Marcar como Pendiente"}
+                                            className="mr-3 mt-0.5 flex-shrink-0 focus:outline-none hover:scale-110 transition-transform"
+                                        >
+                                            {isIncome ? (
+                                                isPendingEntry ? 
+                                                <ClockIcon className="w-6 h-6 text-amber-500" /> : 
+                                                <CheckCircleIcon className="w-6 h-6 text-primary" />
+                                            ) : (
+                                                <MinusCircleIcon className="w-6 h-6 text-red-500" />
+                                            )}
+                                        </button>
+
                                         <div className="flex-grow">
                                             <p className="font-semibold text-text-primary">{entry.description}</p>
-                                            <p className={`text-sm font-medium ${isIncome ? 'text-primary' : 'text-red-600'}`}>
-                                            {entry.currency === 'USD' 
-                                                ? `${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(entry.originalAmount)} (${formatCurrency(entry.amount)})`
-                                                : formatCurrency(entry.amount)}
-                                            </p>
+                                            <div className="flex justify-between items-baseline pr-2">
+                                                <p className={`text-sm font-medium ${isIncome ? 'text-primary' : 'text-red-600'}`}>
+                                                {entry.currency === 'USD' 
+                                                    ? `${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(entry.originalAmount)} (${formatCurrency(entry.amount)})`
+                                                    : formatCurrency(entry.amount)}
+                                                </p>
+                                                {entry.timestamp && (
+                                                    <span className="text-[10px] text-text-secondary font-mono bg-subtle-button-bg px-1.5 py-0.5 rounded-md">
+                                                        {formatTime(entry.timestamp)}
+                                                    </span>
+                                                )}
+                                            </div>
                                             {entry.note && <p className="text-sm text-text-secondary mt-1">{entry.note}</p>}
                                         </div>
                                         <div className="flex items-center ml-2 flex-shrink-0">
@@ -460,6 +502,7 @@ export const SavingsForm: React.FC<SavingsFormProps> = ({ isOpen, onClose, onSav
                                     {destinationConcepts.map(c => <option key={c} value={c}>{c}</option>)}
                                 </select>
                             </div>
+
                             <div className="space-y-2">
                                 <label className="flex items-center space-x-2 text-sm text-text-secondary cursor-pointer">
                                     <input
@@ -515,6 +558,7 @@ export const SavingsForm: React.FC<SavingsFormProps> = ({ isOpen, onClose, onSav
                                     {destinationConcepts.filter(c => c !== transferSource).map(c => <option key={c} value={c}>{c}</option>)}
                                 </select>
                             </div>
+
                             <div className="space-y-2">
                                 <label className="flex items-center space-x-2 text-sm text-text-secondary cursor-pointer">
                                     <input
